@@ -2,6 +2,7 @@ import os
 import cv2
 import numpy as np
 
+
 class VideoReader(object):
 
     def __init__(self):
