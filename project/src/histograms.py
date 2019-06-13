@@ -18,9 +18,6 @@ def splitFrame(array, gridSize):
     
     return frames
 
-
-
-
 def extract_frame_hs_histogram(frame):
   histogram = []
   hsv_image = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -36,7 +33,7 @@ def extract_frame_hs_histogram(frame):
         [hsv_image],
         [i],
         None, # one could specify an optional mask here (we don't use this here),
-        [8],
+        [180],
         channel_range
         )
         
@@ -44,8 +41,6 @@ def extract_frame_hs_histogram(frame):
 
     return histogram
 #   return (histogram / np.sum(histogram)).reshape((2, 8))  # Return a normalized histogram.
-
-
 
 def compute_histograms(frame, grid_size = 2, hist_func = extract_frame_hs_histogram):
     histograms = [extract_frame_hs_histogram(frame)]

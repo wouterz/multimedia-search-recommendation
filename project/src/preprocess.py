@@ -11,7 +11,7 @@ SEGMENTS_PATH = os.path.join(DATA_PATH, "segments")
 MOVIE_PATH = os.path.join(DATA_PATH, "movies")
 
 
-def load_training_set(video_set: set):
+def load_training_set(video_set):
     """
     Load and process all videos in provided training set.
     
@@ -21,13 +21,13 @@ def load_training_set(video_set: set):
     for i in video_set:
         # Int to movie name
         name = "{:05d}".format(i)
-
+        print('processing {}'.format(name), end='\r')
+        
         # Process
         yield process_video(name)
 
 
 def process_video(name: str) -> Video:
-    display(name)
     video_path = os.path.join(MOVIE_PATH, name + ".mp4")
     segments_path = os.path.join(SEGMENTS_PATH, name + ".tsv")
 
