@@ -3,6 +3,7 @@ import numpy as np
 from src.Segment import Segment
 from src.Video import Video
 from .VideoReader import VideoReader
+from .histograms import compute_histograms
 import os
 
 DATA_PATH = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data'))
@@ -26,6 +27,7 @@ def load_training_set(video_set: set):
 
 
 def process_video(name: str) -> Video:
+    display(name)
     video_path = os.path.join(MOVIE_PATH, name + ".mp4")
     segments_path = os.path.join(SEGMENTS_PATH, name + ".tsv")
 
@@ -41,6 +43,9 @@ def process_video(name: str) -> Video:
     frame_iter = source_video.get_frames()
     video.segments = np.apply_along_axis(lambda row: create_segment(frame_iter, row), arr=segment_data, axis=1)
 
+    display(video.segments)
+    display('a')
+    
     return video
 
 
@@ -65,4 +70,7 @@ def create_segment(video_frames, row: np.ndarray) -> Segment:
 def __generate_histograms(framebuffer: np.ndarray) -> np.ndarray:
     print(framebuffer.shape)
     print(framebuffer)
-    raise
+    
+#     for first frame in buffer compute histograms
+    return compute_histograms(framebuffer[0])
+    
