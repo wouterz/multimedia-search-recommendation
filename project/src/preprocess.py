@@ -42,9 +42,6 @@ def process_video(name: str) -> Video:
     video = Video()
     frame_iter = source_video.get_frames()
     video.segments = np.apply_along_axis(lambda row: create_segment(frame_iter, row), arr=segment_data, axis=1)
-
-    display(video.segments)
-    display('a')
     
     return video
 
@@ -68,8 +65,8 @@ def create_segment(video_frames, row: np.ndarray) -> Segment:
 
 
 def __generate_histograms(framebuffer: np.ndarray) -> np.ndarray:
-    print(framebuffer.shape)
-    print(framebuffer)
+#     print(framebuffer.shape)
+#     print(framebuffer)
     
 #     for first frame in buffer compute histograms
     return compute_histograms(framebuffer[0])
