@@ -27,7 +27,7 @@ def load_training_set(video_set, force_renew=False):
         print('processing {}'.format(name), end='\r', flush=True)
         
         # Process
-        yield process_video(name, force_renew)
+        yield from process_video(name, force_renew)
 
 
 def process_video(name: str, force_renew=False) -> Video:
@@ -46,6 +46,11 @@ def process_video(name: str, force_renew=False) -> Video:
         video_path = os.path.join(MOVIE_PATH, name + ".mp4")
         segments_path = os.path.join(SEGMENTS_PATH, name + ".tsv")
 
+        # Check if file exists
+        if not os.path.isfile(video_path):
+            print("Cannot open video %s.mp4 -- File does not exist." % name)
+            return
+        
         # Load movie in memory
         source_video = VideoReader()
         source_video.open(video_path)
@@ -54,24 +59,24 @@ def process_video(name: str, force_renew=False) -> Video:
         segment_data = np.genfromtxt(segments_path, delimiter="\t", skip_header=1, filling_values=1)
 
         # Create video object and convert segments
-        video = Video()
+        video = Video(name + ".mp4")
         frame_iter = source_video.get_frames()
-        video.segments = np.apply_along_axis(lambda row: create_segment(frame_iter, row), arr=segment_data, axis=1)
+        video.segments = np.apply_along_axis(lambda row: create_segment(name + ".mp4", frame_iter, row), arr=segment_data, axis=1)
         
         # Dump to pickle
         with open(pickle_path, 'wb+') as f:
             pickle.dump(video, f)
         
-    return video
+    yield video
 
 
-def create_segment(video_frames, row: np.ndarray) -> Segment:
+def create_segment(movie_id: str, video_frames, row: np.ndarray) -> Segment:
     """"
     Row layout: [startframe, starttime, endframe, endtime]
     """
 
     # Create new segment
-    s = Segment(row[1], row[3], row[0], row[2])
+    s = Segment(movie_id, row[1], row[3], row[0], row[2])
     
     # Accumulate frames in segment
     framebuffer = []
