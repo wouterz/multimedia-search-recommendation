@@ -79,8 +79,7 @@ def create_segment(movie_id: str, video_frames, row: np.ndarray) -> Segment:
     s = Segment(movie_id, row[1], row[3], row[0], row[2])
     
     # Accumulate frames in segment
-    framebuffer = []
-    for _ in range(s.num_frames()): framebuffer.append(next(video_frames))
+    framebuffer = [next(video_frames) for _ in range(s.num_frames()+1)]
         
     # Generate histograms
     s.histograms = generate_histograms(np.asarray(framebuffer))
