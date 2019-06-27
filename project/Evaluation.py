@@ -25,7 +25,7 @@ import cv2
 
 # ## Parameters
 
-# In[93]:
+# In[95]:
 
 
 NUM_VIDEOS = 200
@@ -35,19 +35,19 @@ BINS = [180, 180]
 
 # ## Load training set
 
-# In[94]:
+# In[96]:
 
 
 training_set_generator = prep.load_training_set(range(1, NUM_VIDEOS+1), GRID_SIZE, BINS)
 
 
-# In[35]:
+# In[97]:
 
 
 training_set = list(training_set_generator)
 
 
-# In[39]:
+# In[98]:
 
 
 # Print statistics
@@ -59,7 +59,7 @@ print("Duration:      {:,.1f} s".format( np.sum([np.sum([segment.duration() for 
 
 # ## Select random test set
 
-# In[40]:
+# In[99]:
 
 
 test_n_segments = 1000
@@ -77,7 +77,7 @@ for i in range(test_n_segments):
     labels.append(segment)
 
 
-# In[41]:
+# In[100]:
 
 
 # Print statistics
@@ -89,7 +89,7 @@ print("Num. histograms: {:d}".format( len(test_set) ))
 
 # ## Run model on test set
 
-# In[45]:
+# In[101]:
 
 
 get_ipython().run_line_magic('timeit', 'search.find(test_set[0], training_set, cv2.HISTCMP_CORREL)')
@@ -97,7 +97,7 @@ get_ipython().run_line_magic('timeit', 'search.find(test_set[0], training_set, c
 get_ipython().run_line_magic('timeit', 'search.find(test_set[0], training_set, cv2.HISTCMP_INTERSECT)')
 get_ipython().run_line_magic('timeit', 'search.find(test_set[0], training_set, cv2.HISTCMP_BHATTACHARYYA)')
 get_ipython().run_line_magic('timeit', 'search.find(test_set[0], training_set, cv2.HISTCMP_CHISQR_ALT)')
-get_ipython().run_line_magic('timeit', 'search.find(test_set[0], training_set, cv2.HISTCMP_KL_DIV))')
+get_ipython().run_line_magic('timeit', 'search.find(test_set[0], training_set, cv2.HISTCMP_KL_DIV)')
 
 
 # In[42]:
