@@ -19,36 +19,40 @@ def splitFrame(array, gridSize):
     return frames
 
 def extract_frame_hs_histogram(frame):
-  histogram = []
-  hsv_image = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    histogram = []
+    hsv_image = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     
-  range = [[0, 180], [0, 256]]
-  channels = [0,1]
-  for i in channels:
-    channel = frame[:,:,i]
-    channel_range = range[i]
-
-
-    channel_histogram = cv2.calcHist(
-        [hsv_image],
-        [i],
-        None, # one could specify an optional mask here (we don't use this here),
-        [180],
-        channel_range
-        )
-        
-    histogram.append(channel_histogram)
+    range = [[0, 180], [0, 256]]
+    channels = [0,1]
+    for i in channels:
+        channel = frame[:,:,i]
+        channel_range = range[i]
+        channel_histogram = cv2.calcHist(
+            [hsv_image],
+            [i],
+            None, # one could specify an optional mask here (we don't use this here),
+            [180],
+            channel_range
+            )     
+        histogram.append(channel_histogram)
 
     return histogram
 #   return (histogram / np.sum(histogram)).reshape((2, 8))  # Return a normalized histogram.
 
+
 def compute_histograms(frame, grid_size = 2, hist_func = extract_frame_hs_histogram):
-    histograms = [extract_frame_hs_histogram(frame)]
+    """
+    compute_histograms computes the full histogram and grid_size**2 subhistograms from top left horizontally to bottom right.
+    """
+    # Initialize array with main histogram
+    histograms = extract_frame_hs_histogram(frame)
         
-    subframes = splitFrame(frame, grid_size)
+#     # Splits the frame into grids
+#     subframes = splitFrame(frame, grid_size)
     
-    for i in range(grid_size**2):
-        sub_hist = subframes[i]
-        histograms.append(extract_frame_hs_histogram(subframes[i]))
+#     # Compute the histogram for each of the grids
+#     for i in range(grid_size**2):
+#         sub_hist = subframes[i]
+#         histograms.append(extract_frame_hs_histogram(subframes[i]))
 
     return histograms
