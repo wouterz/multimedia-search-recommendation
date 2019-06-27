@@ -100,18 +100,19 @@ get_ipython().run_line_magic('timeit', 'search.find(test_set[0], training_set, c
 get_ipython().run_line_magic('timeit', 'search.find(test_set[0], training_set, cv2.HISTCMP_KL_DIV)')
 
 
-# In[42]:
+# In[ ]:
 
 
 results = []
 
-for histogram in test_set:
+for i, histogram in enumerate(test_set):
+    print('{}/{} searches'.format(i, len(test_set)), end = '\r')
     results.append(search.find(histogram, training_set, cv2.HISTCMP_INTERSECT))
 
 
 # ## Evaluate performance
 
-# In[46]:
+# In[103]:
 
 
 movie_correct = 0
