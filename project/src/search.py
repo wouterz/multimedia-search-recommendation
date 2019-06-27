@@ -21,11 +21,10 @@ def isSimilarityMetric(metric):
     raise 'Unknown hist metric'
         
 
-def find(target_histograms : np.ndarray, videos, histMetric, prints = False):    
-    # 2D array, an array for each video containing the distance per segement
-    
+def find(target_histograms : np.ndarray, videos, histMetric, prints = False):
     isSimilarity = isSimilarityMetric(histMetric)
-    
+
+    # 2D array, an array for each video containing the distance per segement
     distances = []
     for video in videos:
         # Array to store the distance per segment
@@ -42,8 +41,12 @@ def find(target_histograms : np.ndarray, videos, histMetric, prints = False):
     
     # Compute top 5 segments -with the lowest distance- for each video
     best_dist_indices = []
-    for d in distances:
-        best_dist_indices.append(np.argpartition(d, -5)[-5:])
+    if isSimilarity:
+        for d in distances:
+            best_dist_indices.append(np.argpartition(d, -5)[-5:])
+    else:
+        for d in distances:
+            best_dist_indices.append(np.argpartition(d, 5)[:5])
     
     sub_distances = []
     i = 0
@@ -61,7 +64,11 @@ def find(target_histograms : np.ndarray, videos, histMetric, prints = False):
         i = i + 1
 
     # Find index of maximum value in matrix
-    result = np.where(sub_distances == np.amax(sub_distances))
+    result = []
+    if isSimilarity:
+        result = np.where(sub_distances == np.amax(sub_distances))
+    else:
+        result = np.where(sub_distances == np.amin(sub_distances))
         
     match_vid = result[0][0]
     match_seg = best_dist_indices[result[0][0]][result[1][0]]
