@@ -13,7 +13,7 @@ MOVIE_PATH = os.path.join(DATA_PATH, "movies")
 PICKLE_PATH = os.path.join(DATA_PATH, "pickle")
 
 
-def load_training_set(video_set, force_refresh=False):
+def load_training_set(video_set, grid_size, bins, force_refresh=False):
     """
     Load and process all videos in provided training set.
 
@@ -30,7 +30,7 @@ def load_training_set(video_set, force_refresh=False):
         print('\rprocessing {}'.format(name), end='', flush=True)
 
         # Process
-        video = process_video(name, force_refresh)
+        video = process_video(name, grid_size, bins, force_refresh)
         if video is not None: videos.append(video)
 
     print('\rDone processing!', end='', flush=True)
@@ -38,8 +38,18 @@ def load_training_set(video_set, force_refresh=False):
     return videos
 
 
-def process_video(name: str, force_refresh=False) -> Video:
-    pickle_path = os.path.join(PICKLE_PATH, name + ".pickle")
+def process_video(name: str, grid_size : int, bins: [], force_refresh=False) -> Video:
+    # Convert bins and grid to strings
+    bins_str =  '_'.join(str(b) for b in bins)
+    grid_size_str = str(grid_size)
+    
+    pickle_dir = os.path.join(PICKLE_PATH, grid_size_str, bins_str)
+    
+    # Create folder if it doenst exist
+    if not os.path.exists(pickle_dir):
+        os.makedirs(pickle_dir)
+        
+    pickle_path = os.path.join(pickle_dir, name + ".pickle")
 
     # If processed pickle exists, load that
     if not force_refresh and os.path.isfile(pickle_path):
@@ -69,7 +79,7 @@ def process_video(name: str, force_refresh=False) -> Video:
         # Create video object and convert segments
         video = Video(name + ".mp4")
         frame_iter = source_video.get_frames()
-        video.segments = np.apply_along_axis(lambda row: create_segment(name + ".mp4", frame_iter, row),
+        video.segments = np.apply_along_axis(lambda row: create_segment(name + ".mp4", frame_iter, row, grid_size, bins),
                                              arr=segment_data, axis=1)
 
         # Dump to pickle
@@ -79,7 +89,7 @@ def process_video(name: str, force_refresh=False) -> Video:
     return video
 
 
-def create_segment(movie_id: str, video_frames, row: np.ndarray) -> Segment:
+def create_segment(movie_id: str, video_frames, row: np.ndarray, grid_size : int, bins : []) -> Segment:
     """"
     Row layout: [startframe, starttime, endframe, endtime]
     """
@@ -91,21 +101,18 @@ def create_segment(movie_id: str, video_frames, row: np.ndarray) -> Segment:
     framebuffer = [next(video_frames) for _ in range(s.num_frames() + 1)]
 
     # Generate histograms
-    s.histograms = generate_histograms(np.asarray(framebuffer))
+    s.histograms = generate_histograms(np.asarray(framebuffer), grid_size, bins)
 
     return s
 
 
-def generate_histograms(framebuffer: np.ndarray) -> np.ndarray:
-    #     print(framebuffer.shape)
-    #     print(framebuffer)
-
+def generate_histograms(framebuffer: np.ndarray, grid_size : int, bins : []) -> np.ndarray:
     histograms = []
 
     for frame in framebuffer:
 
         if len(histograms) == 0:
-            histograms.append(compute_histograms(frame))
+            histograms.append(compute_histograms(frame, grid_size, bins))
         else:
             pass
             # Change detection
