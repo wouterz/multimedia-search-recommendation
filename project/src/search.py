@@ -2,16 +2,6 @@ import pandas as pd
 import numpy as np
 import cv2
 
-
-# cv::HistCompMethods { 
-#   cv::HISTCMP_CORREL = 0, 
-#   cv::HISTCMP_CHISQR = 1, 
-#   cv::HISTCMP_INTERSECT = 2, 
-#   cv::HISTCMP_BHATTACHARYYA = 3, 
-#   cv::HISTCMP_CHISQR_ALT = 4, 
-#   cv::HISTCMP_KL_DIV = 5 
-# }
-
 def isSimilarityMetric(metric):
     if metric == cv2.HISTCMP_CORREL or metric == cv2.HISTCMP_INTERSECT:
         return True
