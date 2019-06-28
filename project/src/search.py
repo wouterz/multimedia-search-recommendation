@@ -11,47 +11,64 @@ def isSimilarityMetric(metric):
     raise 'Unknown hist metric'
         
 
-def find(target_histograms : np.ndarray, videos, histMetric, prints = False):
+def find(target_histograms, videos, histMetric, prints = False):
+    
     isSimilarity = isSimilarityMetric(histMetric)
-
-    # 2D array, an array for each video containing the distance per segement
+    
+    # 2D array, an array for each video containing the distance per segment
     distances = []
+    
     for video in videos:
+        
         # Array to store the distance per segment
-        segment_dist = []       
-        for segment in video.segments:
+        segment_dist = []
+        
+        for segment in video.segments:  # Video has many segments
             dist = 0
-            # per channel
-            for i, h in enumerate(segment.histograms[0]):
-                # Method kiezen, voor nu intersection
-                # Compare the full image histogram
-                dist += cv2.compareHist(target_histograms[0][i], h, histMetric)
+            
+            for frame_index, frame_hists in enumerate(segment.histograms):  # Segment has many frames (list of histograms per frame)
+                
+                # If we use the following line, processing time is very low (~25ms instead of ~200ms) but then we only consider one channel
+#                 dist += cv2.compareHist(target_histograms[frame_index][0][0], frame_hists[0][0], histMetric)
+                
+                # Sum distance per channel (index '0' is full histogram)
+                for channel, h in enumerate(frame_hists[0]): # TODO: maybe merge channels and check simultaneously for speed
+                    dist += cv2.compareHist(target_histograms[frame_index][0][channel], h, histMetric)
+                
             segment_dist.append(dist)
         distances.append(segment_dist)
+    
+    # TODO: distances and segment_dist are lists and not arrays
+    distances = np.asarray(distances)
+    
     
     # Compute top 5 segments -with the lowest distance- for each video
     best_dist_indices = []
     if isSimilarity:
-        for d in distances:
-            best_dist_indices.append(np.argpartition(d, -5)[-5:])
+        for d in distances: best_dist_indices.append(np.argpartition(d, -5)[-5:])
     else:
-        for d in distances:
-            best_dist_indices.append(np.argpartition(d, 5)[:5])
+        for d in distances: best_dist_indices.append(np.argpartition(d, 5)[:5])
     
     sub_distances = []
-    i = 0
-    for video in videos:
-        segment_dist = []       
+    
+    # TODO: maybe invert this loop? First iterate best_dist_indices and then loop videos?
+    for i, video in enumerate(videos):
+        segment_dist = []
+        
         for segment_index in best_dist_indices[i]:
             segment = video.segments[segment_index]
             dist = 0
-            for j, grid_hists in enumerate(segment.histograms): 
-                for k, channel_hist in enumerate(grid_hists):
-                    dist += cv2.compareHist(target_histograms[j][k], channel_hist, histMetric)
+            
+            for frame_index, frame_hists in enumerate(segment.histograms):  # Segment has many frames (list of histograms per frame)
+                for hist_index, hists in enumerate(frame_hists):            # Frame has many (sub-)histograms
+                    
+                    # Sum distance per channel
+                    for channel, h in enumerate(hists):
+                        dist += cv2.compareHist(target_histograms[frame_index][hist_index][channel], h, histMetric)
+                    
             segment_dist.append(dist)    
             
         sub_distances.append(segment_dist)
-        i = i + 1
 
     # Find index of maximum value in matrix
     result = []
