@@ -36,7 +36,7 @@ def compute_histograms(frame, hist_func=frame_to_hs_hist, grid_size=2, bins=[180
     
     # Split frame into grids and calculate histograms
     # TODO: why save these at all and not just 'generate' and check them only for the best matches?
-    if grid_size and grid_size > 0:
+    if grid_size and grid_size > 1:
         for sub_frame in split_frame(hsv_frame, grid_size):
             histograms += hist_func(sub_frame, bins)
 
