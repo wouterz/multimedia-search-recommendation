@@ -39,11 +39,8 @@ def load_training_set(video_set, grid_size, bins, force_refresh=False):
 
 
 def process_video(name: str, grid_size : int, bins: [], force_refresh=False) -> Video:
-    # Convert bins and grid to strings
-    bins_str =  '_'.join(str(b) for b in bins)
-    grid_size_str = str(grid_size)
     
-    pickle_dir = os.path.join(PICKLE_PATH, grid_size_str, bins_str)
+    pickle_dir = os.path.join(PICKLE_PATH, str(grid_size), '_'.join(str(b) for b in bins))
     
     # Create folder if it doenst exist
     if not os.path.exists(pickle_dir):
@@ -111,10 +108,12 @@ def generate_histograms(framebuffer: np.ndarray, grid_size : int, bins : []) -> 
 
     for frame in framebuffer:
 
-        if len(histograms) == 0:
-            histograms.append(compute_histograms(frame, grid_size, bins))
-        else:
-            pass
-            # Change detection
+        # TODO: make sure frame width/height is an even number here
+            
+        # First histogram in list is full image, other the grid histograms
+        frame_histograms = compute_histograms(frame, grid_size=grid_size, bins=bins)
 
-    return np.asarray(histograms)
+        histograms.append(frame_histograms)
+
+        # For now only convert the first frame
+        return histograms
