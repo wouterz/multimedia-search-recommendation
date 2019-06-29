@@ -8,7 +8,7 @@ class Segment:
     frame_start: int
     frame_end: int
 
-    histograms: np.ndarray
+    histograms: list
 
     def __init__(self, movie_id, time_start, time_end, frame_start, frame_end) -> None:
         self.movie_id = movie_id
@@ -21,7 +21,7 @@ class Segment:
         return self.time_end - self.time_start
 
     def num_frames(self) -> int:
-        return self.frame_end - self.frame_start
+        return self.frame_end - self.frame_start + 1
 
     def set_hist(self, hist: np.ndarray, loc: tuple):
         self.histograms[loc[0] * 3 + loc[1]] = hist
