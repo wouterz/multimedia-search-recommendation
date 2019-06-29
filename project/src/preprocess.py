@@ -98,11 +98,13 @@ def create_segment(movie_id: str, video_frames, row: np.ndarray, grid_size : int
     s.histograms = []
     
     # Generate histograms for frames in segment
-    for _ in range(0, s.num_frames(), skip_val = 1000):
-        frame_histograms = compute_histograms(next(video_frames), grid_size=grid_size, bins=bins)
-        s.histograms.append(frame_histograms)
+    for i in range(0, s.num_frames(), skip_val):
+        if i % skip_val == 0:
+            frame_histograms = compute_histograms(next(video_frames), grid_size=grid_size, bins=bins)
+            s.histograms.append(frame_histograms)
+        next(video_frames)
         
         # Only convert the first frame for now
-        break;
+#         break;
     
     return s
