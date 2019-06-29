@@ -69,12 +69,12 @@ def process_video(name: str, grid_size : int, bins: [], skip_val, force_refresh=
         # Load movie in memory
         source_video = VideoReader()
         source_video.open(video_path)
-
+        
         # Load segments file
         segment_data = np.genfromtxt(segments_path, delimiter="\t", skip_header=1, filling_values=1)
 
         # Create video object and convert segments
-        video = Video(name + ".mp4")
+        video = Video(name + ".mp4", source_video.get_number_of_frames(), source_video.get_frame_rate())
         frame_iter = source_video.get_frames()
         video.segments = np.apply_along_axis(lambda row: create_segment(
                                              name + ".mp4", frame_iter, row, grid_size, bins, skip_val),
@@ -94,27 +94,15 @@ def create_segment(movie_id: str, video_frames, row: np.ndarray, grid_size : int
 
     # Create new segment
     s = Segment(movie_id, row[1], row[3], row[0], row[2])
-
-    # Accumulate frames in segment
-    framebuffer = [next(video_frames) for _ in range(s.num_frames() + 1)]
-
-    # Generate histograms
-    s.histograms = generate_histograms(np.asarray(framebuffer), grid_size, bins, skip_val)
-
+    
+    s.histograms = []
+    
+    # Generate histograms for frames in segment
+    for _ in range(0, s.num_frames(), skip_val = 1000):
+        frame_histograms = compute_histograms(next(video_frames), grid_size=grid_size, bins=bins)
+        s.histograms.append(frame_histograms)
+        
+        # Only convert the first frame for now
+        break;
+    
     return s
-
-
-def generate_histograms(framebuffer: np.ndarray, grid_size : int, bins : [], skip_val = 100000) -> np.ndarray:
-    histograms = []
-
-    for i in range(0, len(framebuffer), skip_val):
-        frame = framebuffer[i]
-        # TODO: make sure frame width/height is an even number here
-            
-        # First histogram in list is full image, other the grid histograms
-        frame_histograms = compute_histograms(frame, grid_size=grid_size, bins=bins)
-
-        histograms.append(frame_histograms)
-           
-    # For now only convert the first frame
-    return histograms
