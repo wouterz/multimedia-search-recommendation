@@ -12,9 +12,8 @@ def isSimilarityMetric(metric):
         
 
 
-def findFrame(target_histograms, frame_id, videos, histMetric, best_n_full_hist = 10, prints = False):
-    assert len(target_histograms) >= frame_id
-    
+def findFrame(target_histograms, videos, histMetric, best_n_full_hist = 10, channels = [0, 1], prints = False, printRes = False):
+        
     isSimilarity = isSimilarityMetric(histMetric)
     
     # 2D array, an array for each video containing the distance per segment
@@ -32,14 +31,20 @@ def findFrame(target_histograms, frame_id, videos, histMetric, best_n_full_hist 
                 dist = 0
 
                 # Sum distance per channel (index '0' is full histogram)
-#                 TODO Enumerate seems almost double runtime 35 to 65
-                for channel, h in enumerate(frame_hists[0]): # TODO: maybe merge channels and check simultaneously for speed
-                    dist += cv2.compareHist(target_histograms[frame_id][0][channel], frame_hists[0][channel], histMetric)
-#                 dist += cv2.compareHist(target_histograms[frame_id][0][1], frame_hists[0][1], histMetric)
-    
+#                 for channel, h in enumerate(frame_hists[0]): # TODO: maybe merge channels and check simultaneously for speed
+                for channel in channels:
+                    dist += cv2.compareHist(target_histograms[0][channel], frame_hists[0][channel], histMetric)
+            
                 frame_dist.append(dist)
+            
+            if prints:
+                print('frame_dists', frame_dist)
+        
+            if isSimilarity:
+                segment_dist.append(max(frame_dist))
+            else:
+                segment_dist.append(min(frame_dist))
 
-            segment_dist.append(max(frame_dist))
         distances.append(segment_dist)
     
     # TODO: distances and segment_dist are lists and not arrays
@@ -50,14 +55,20 @@ def findFrame(target_histograms, frame_id, videos, histMetric, best_n_full_hist 
     
     # Compute top n segments for each video
     best_dist_indices = []
-    if isSimilarity:
-        for d in distances: best_dist_indices.append(np.argpartition(d, -best_n_full_hist)[-best_n_full_hist:])
-#         best_dist_indices = np.argpartition(distances, -best_n_dist)[-best_n_dist:]
-    else:
-        for d in distances: best_dist_indices.append(np.argpartition(d, best_n_full_hist)[:best_n_full_hist])
+    for d in distances:
+        n_best = min(best_n_full_hist, len(d))
+        if isSimilarity:
+            best_dist_indices.append(np.argpartition(d, -n_best)[-n_best:])
+        else:
+            best_dist_indices.append(np.argpartition(d, n_best)[:n_best])
 
     if prints:
         print('best_dist_indices', best_dist_indices)
+        values = []
+        for i, tmp in enumerate(best_dist_indices):
+            for ind in tmp:
+                values.append(distances[i][ind])
+        print('values', values)
 
     sub_distances = []
     
@@ -72,13 +83,21 @@ def findFrame(target_histograms, frame_id, videos, histMetric, best_n_full_hist 
                 dist = 0
 
                 for hist_index, hists in enumerate(frame_hists):            # Frame has many (sub-)histograms
+#                     if hist_index == 0:
+#                         continue
+                        
+
                     # Sum distance per channel
-                    for channel, h in enumerate(hists):
-                        dist += cv2.compareHist(target_histograms[frame_id][hist_index][channel], h, histMetric)
-                
+#                     for channel, h in enumerate(hists):
+                    for channel in channels:
+                        dist += cv2.compareHist(target_histograms[hist_index][channel], hists[channel], histMetric)
+
                 frame_dist.append(dist)
                     
-            segment_dist.append(max(frame_dist))    
+            if isSimilarity:
+                segment_dist.append(max(frame_dist))
+            else:
+                segment_dist.append(min(frame_dist))
             
         sub_distances.append(segment_dist)
     
@@ -92,27 +111,13 @@ def findFrame(target_histograms, frame_id, videos, histMetric, best_n_full_hist 
     match_vid = result[0][0]
     match_seg = best_dist_indices[result[0][0]][result[1][0]]
     
-    if prints:
+    if printRes:
         print('video {:05d} - segment {}'.format(match_vid+1, match_seg))
 
-    return videos[match_vid].segments[match_seg]        
-
-
-
-
-
-
+    return videos[match_vid].segments[match_seg]
 
 
 def find(target_histograms, videos, histMetric, prints = False):
-    """
-    def find finds the sementsdjfoshdf
-    def find finds the sementsdjfoshdf
-    def find finds the sementsdjfoshdf
-    def find finds the sementsdjfoshdf
-    def find finds the sementsdjfoshdf
-    def find finds the sementsdjfoshdf  
-    """
     isSimilarity = isSimilarityMetric(histMetric)
     
     # 2D array, an array for each video containing the distance per segment
@@ -180,7 +185,7 @@ def find(target_histograms, videos, histMetric, prints = False):
     match_vid = result[0][0]
     match_seg = best_dist_indices[result[0][0]][result[1][0]]
     
-    if prints:
+    if printRes:
         print('video {:05d} - segment {}'.format(match_vid+1, match_seg))
 
     return videos[match_vid].segments[match_seg]

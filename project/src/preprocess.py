@@ -41,7 +41,7 @@ def load_training_set(video_set, grid_size, bins, skip_val, force_refresh=False)
 
 def process_video(name: str, grid_size : int, bins: [], skip_val, force_refresh=False) -> Video:
     
-    pickle_dir = os.path.join(PICKLE_PATH, str(grid_size), '_'.join(str(b) for b in bins))
+    pickle_dir = os.path.join(PICKLE_PATH, str(grid_size), '_'.join(str(b) for b in bins), str(skip_val))
     
 #     Create folder if it doenst exist
     if not os.path.exists(pickle_dir):

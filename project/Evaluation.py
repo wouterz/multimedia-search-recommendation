@@ -3,14 +3,14 @@
 
 # # Evaluation
 
-# In[1]:
+# In[74]:
 
 
 get_ipython().run_line_magic('load_ext', 'autoreload')
 get_ipython().run_line_magic('autoreload', '2')
 
 
-# In[2]:
+# In[75]:
 
 
 import pandas as pd
@@ -26,25 +26,30 @@ import cv2
 
 # ## Parameters
 
-# In[55]:
+# In[76]:
 
 
-NUM_VIDEOS = 20
+NUM_VIDEOS = 2
 GRID_SIZE = 2
 BINS = [180, 180]
 HIST_FRAME_SKIP = 20
-REFRESH = True
+REFRESH = False
+
+# vergeet gebruikte params soms dus print ze maar afentoe
+def printParams():
+    print('Num. Vid {} - Grid {} - Bins {} - Skip {}'.format(NUM_VIDEOS, GRID_SIZE, BINS, HIST_FRAME_SKIP))
 
 
 # ## Load training set
 
-# In[416]:
+# In[77]:
 
 
+printParams()
 training_set = prep.load_training_set(range(1, NUM_VIDEOS+1), GRID_SIZE, BINS, HIST_FRAME_SKIP, force_refresh=REFRESH)
 
 
-# In[417]:
+# In[78]:
 
 
 # Print statistics
@@ -58,7 +63,7 @@ print("Num histograms:      {:d}".format( np.sum([np.sum([len(segment.histograms
 
 # ## Select random test set
 
-# In[57]:
+# In[79]:
 
 
 test_n_segments = 100
@@ -76,7 +81,7 @@ for i in range(test_n_segments):
     labels.append(segment)
 
 
-# In[63]:
+# In[80]:
 
 
 # Print statistics
@@ -88,17 +93,20 @@ print("Num. histograms: {:d}".format( np.sum([len(histogram) for histogram in te
 
 # ## Run model on test set
 
-# In[78]:
+# In[81]:
 
 
-get_ipython().run_line_magic('timeit', 'search.findFrame(test_set[0], 0, training_set, cv2.HISTCMP_CORREL)')
-get_ipython().run_line_magic('timeit', 'search.findFrame(test_set[0], 0, training_set, cv2.HISTCMP_CHISQR)')
-get_ipython().run_line_magic('timeit', 'search.findFrame(test_set[0], 0, training_set, cv2.HISTCMP_INTERSECT)')
-get_ipython().run_line_magic('timeit', 'search.findFrame(test_set[0], 0, training_set, cv2.HISTCMP_BHATTACHARYYA)')
-get_ipython().run_line_magic('timeit', 'search.findFrame(test_set[0], 0, training_set, cv2.HISTCMP_CHISQR_ALT)')
-get_ipython().run_line_magic('timeit', 'search.findFrame(test_set[0], 0, training_set, cv2.HISTCMP_KL_DIV)')
+printParams()
 
-get_ipython().run_line_magic('timeit', 'search.findFrame(test_set[0], 0, training_set, cv2.HISTCMP_KL_DIV, 5)')
+for method in [cv2.HISTCMP_CORREL, cv2.HISTCMP_CHISQR, cv2.cv2.HISTCMP_INTERSECT,
+               cv2.HISTCMP_BHATTACHARYYA, cv2.HISTCMP_CHISQR_ALT, cv2.HISTCMP_KL_DIV]:
+    print('{}'.format(method))
+    get_ipython().run_line_magic('timeit', '-n 10 search.findFrame(test_set[0][0], training_set, method)')
+
+for ch in [[0], [1], [0, 1]]:
+    print('{}'.format(ch))
+    get_ipython().run_line_magic('timeit', '-n 10 search.findFrame(test_set[0][0], training_set, cv2.HISTCMP_CORREL, channels=ch)')
+
 
 # %timeit search.find(test_set[0], training_set, cv2.HISTCMP_CORREL)
 # %timeit search.find(test_set[0], training_set, cv2.HISTCMP_CHISQR)
@@ -108,34 +116,53 @@ get_ipython().run_line_magic('timeit', 'search.findFrame(test_set[0], 0, trainin
 # %timeit search.find(test_set[0], training_set, cv2.HISTCMP_KL_DIV)
 
 
-# In[67]:
+# In[82]:
 
+
+printParams()
 
 results = []
 
-for i, histograms in enumerate(test_set):
-    print('\rSearching segment {}/{} - Frames in segment: {}'.format(i+1, len(test_set), len(histograms)), end='', flush=True)
-
-#     results.append(search.find(histogram, training_set, cv2.HISTCMP_INTERSECT))
-    results.append(search.findFrame(histograms,  0, training_set, cv2.HISTCMP_INTERSECT))
+for i, segment_histograms in enumerate(test_set):
+    print('\rSearching segment {}/{}'.format(i+1, len(test_set)), end='', flush=True)
+    
+    x = random.choice(range(len(segment_histograms)))
+    results.append(search.findFrame(segment_histograms[0], training_set, 5, cv2.HISTCMP_CHISQR_ALT))
 
 
 # ## Evaluate performance
 
-# In[79]:
+# In[83]:
 
 
 evaluate_segments(results, labels)
 
 
-# In[37]:
+# # Manual Evaluation
+
+# In[73]:
 
 
-hists = training_set[0].segments[5].histograms
-display(len(hists))
-# 0 = altijd perfect match
-tf = 1
-search.findFrame(hists, tf, training_set, cv2.HISTCMP_INTERSECT, prints=True)
+#Manually check what happens
+test_vid = 1
+for i in range(len(training_set[test_vid].segments)):
+    
+    hists = training_set[test_vid].segments[i].histograms
+
+    #Possibly shrink set for readability
+    # train = training_set.copy()
+    # for t in train:
+    #     t.segments = t.segments[:20]
+
+    # 0 = first histogram of segment, so perfect match
+    tf = 0
+    search.findFrame(hists[tf], train, cv2.HISTCMP_CHISQR_ALT, 5, prints=False, printRes = True)
+
+
+# In[ ]:
+
+
+
 
 
 # In[ ]:
