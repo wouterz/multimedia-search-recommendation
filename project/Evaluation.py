@@ -3,36 +3,36 @@
 
 # # Evaluation
 
-# In[120]:
+# In[189]:
 
 
 get_ipython().run_line_magic('load_ext', 'autoreload')
 get_ipython().run_line_magic('autoreload', '2')
 
 
-# In[121]:
+# In[190]:
 
 
 import pandas as pd
 import numpy as np
 from src import preprocess as prep
-from src.evaluation import evaluate_segments
-import random
+from src.evaluation import pick_test_segments, generate_test_segments, evaluate_segments
 from src.Video import Video
 from src.Segment import Segment
 from src import search
+import random
 import cv2
 
 
 # ## Parameters
 
-# In[122]:
+# In[169]:
 
 
 NUM_VIDEOS = 20
-GRID_SIZE = 2
-BINS = [180, 180]
-HIST_FRAME_SKIP = 20
+GRID_SIZE = 3
+BINS = [180, 256]
+HIST_FRAME_SKIP = 10
 REFRESH = False
 
 # vergeet gebruikte params soms dus print ze maar afentoe
@@ -40,16 +40,23 @@ def printParams():
     print('Num. Vid {} - Grid {} - Bins {} - Skip {}'.format(NUM_VIDEOS, GRID_SIZE, BINS, HIST_FRAME_SKIP))
 
 
-# ## Load training set
+# ## Load training set / generate test set
 
-# In[123]:
+# In[170]:
 
 
 printParams()
 training_set = prep.load_training_set(range(1, NUM_VIDEOS+1), GRID_SIZE, BINS, HIST_FRAME_SKIP, force_refresh=REFRESH)
 
 
-# In[124]:
+# In[171]:
+
+
+# Set of 100 custom fragments with duration 20sec
+test_set, labels = generate_test_segments(training_set, n=100, duration=20)
+
+
+# In[172]:
 
 
 # Print statistics
@@ -60,110 +67,55 @@ print("Duration:      {:,.1f} s".format( np.sum([np.sum([segment.duration() for 
 print("Num frames:      {:d}".format( np.sum([np.sum([segment.num_frames() for segment in video.segments]) for video in training_set])) )
 print("Num histograms:      {:d}".format( np.sum([np.sum([len(segment.histograms) for segment in video.segments]) for video in training_set])) )
 
-
-# ## Select random test set
-
-# In[125]:
+print("TEST SET:")
+print("Size: {:d}".format( len(test_set) ))
 
 
-test_n_segments = 100
-test_set = []
-labels = []
+# ## Run model on test set
 
-for i in range(test_n_segments):
-    
-    # Find random video
-    video = random.choice(training_set)
-    
-    # Select random segment and add histogram to test set
-    segment = random.choice(video.segments)
-    test_set.append(segment.histograms)
-    labels.append(segment)
+# In[177]:
+
+
+labels[:10]
+
+
+# In[191]:
+
+
+# for method in [cv2.HISTCMP_CORREL, cv2.HISTCMP_CHISQR, cv2.cv2.HISTCMP_INTERSECT,
+#                cv2.HISTCMP_BHATTACHARYYA, cv2.HISTCMP_CHISQR_ALT, cv2.HISTCMP_KL_DIV]:
+#     print('{}'.format(method))
+#     %timeit -n 10 search.findFrame(test_set[0][0], training_set, method)
+
+# %timeit -n 10
+search.findFrame(test_set[1][0], training_set, cv2.HISTCMP_CHISQR_ALT, 3)
+
+
+
+
+# for ch in [[0], [1], [0, 1]]:
+#     print('{}'.format(ch))
+#     %timeit -n 10 search.findFrame(test_set[0], training_set, cv2.HISTCMP_CORREL, channels=ch)
 
 
 # In[126]:
 
 
-# Print statistics
-print("TEST SET:")
-print("Num. histograms: {:d}".format( np.sum([len(histogram) for histogram in test_set]) ))
-
-
-# <br>
-
-# ## Run model on test set
-
-# In[89]:
-
-
-printParams()
-
-for method in [cv2.HISTCMP_CORREL, cv2.HISTCMP_CHISQR, cv2.cv2.HISTCMP_INTERSECT,
-               cv2.HISTCMP_BHATTACHARYYA, cv2.HISTCMP_CHISQR_ALT, cv2.HISTCMP_KL_DIV]:
-    print('{}'.format(method))
-    get_ipython().run_line_magic('timeit', '-n 10 search.findFrame(test_set[0][0], training_set, method)')
-
-for ch in [[0], [1], [0, 1]]:
-    print('{}'.format(ch))
-    get_ipython().run_line_magic('timeit', '-n 10 search.findFrame(test_set[0][0], training_set, cv2.HISTCMP_CORREL, channels=ch)')
-
-
-# %timeit search.find(test_set[0], training_set, cv2.HISTCMP_CORREL)
-# %timeit search.find(test_set[0], training_set, cv2.HISTCMP_CHISQR)
-# %timeit search.find(test_set[0], training_set, cv2.HISTCMP_INTERSECT)
-# %timeit search.find(test_set[0], training_set, cv2.HISTCMP_BHATTACHARYYA)
-# %timeit search.find(test_set[0], training_set, cv2.HISTCMP_CHISQR_ALT)
-# %timeit search.find(test_set[0], training_set, cv2.HISTCMP_KL_DIV)
-
-
-# In[133]:
-
-
-printParams()
-
 results = []
 
-for i, segment_histograms in enumerate(test_set):
+for i, histogram in enumerate(test_set):
     print('\rSearching segment {}/{}'.format(i+1, len(test_set)), end='', flush=True)
     
-    x = random.choice(range(len(segment_histograms)))
-#     results.append(search.find(segment_histograms, training_set, 5, cv2.HISTCMP_CHISQR_ALT))
-    results.append(search.findFrame(segment_histograms[0], training_set, 1, cv2.HISTCMP_CHISQR_ALT))
+#     results.append(search.find(histogram, training_set, cv2.HISTCMP_INTERSECT))
+    results.append(search.findFrame(histogram[0], training_set, cv2.HISTCMP_CHISQR_ALT, 10))
 
 
 # ## Evaluate performance
 
-# In[134]:
+# In[52]:
 
 
 evaluate_segments(results, labels)
-
-
-# # Manual Evaluation
-
-# In[99]:
-
-
-#Manually check what happens
-test_vid = 6
-for i in range(len(training_set[test_vid].segments)):
-    
-    hists = training_set[test_vid].segments[i].histograms
-
-    #Possibly shrink set for readability
-    # train = training_set.copy()
-    # for t in train:
-    #     t.segments = t.segments[:20]
-
-    # 0 = first histogram of segment, so perfect match
-    tf = 0
-    search.findFrame(hists[tf], train, cv2.HISTCMP_CHISQR_ALT, 5, prints=False, printRes = True)
-
-
-# In[ ]:
-
-
-
 
 
 # In[ ]:

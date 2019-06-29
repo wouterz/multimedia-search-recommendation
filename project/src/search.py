@@ -20,6 +20,8 @@ def findFrame(target_histograms, videos, histMetric, best_n_full_hist = 10, chan
     # Check if chosen metric is similarity or dissimilarity
     isSimilarity = isSimilarityMetric(histMetric)
     
+    assert best_n_full_hist >= 2, 'If smaller than 2 never know if top list is exhaustive'
+    
     # Array containing the distances per video for each segment
     distances = []
     
@@ -59,9 +61,17 @@ def findFrame(target_histograms, videos, histMetric, best_n_full_hist = 10, chan
     for d in distances:
         n_best = min(best_n_full_hist, len(d))
         if isSimilarity:
-            best_dist_indices.append(np.argpartition(d, -n_best)[-n_best:])
+            best_n_idx = np.argpartition(d, -n_best)[-n_best:]
+            values = [d[idx] for idx in best_n_idx]
+            if values.count(values[0]) == n_best:
+                print('WARNING: n_best too small might miss best value', values)
+            best_dist_indices.append(best_n_idx)
         else:
-            best_dist_indices.append(np.argpartition(d, n_best)[:n_best])
+            best_n_idx = np.argpartition(d, n_best)[:n_best]
+            values = [d[idx] for idx in best_n_idx]
+            if values.count(values[0]) == n_best:
+                print('WARNING: n_best too small might miss best value', values)
+            best_dist_indices.append(best_n_idx)
 
     if prints:
         print('best_dist_indices', best_dist_indices)
@@ -113,14 +123,20 @@ def findFrame(target_histograms, videos, histMetric, best_n_full_hist = 10, chan
         result = np.where(sub_distances == np.amax(sub_distances))
     else:
         result = np.where(sub_distances == np.amin(sub_distances))
-        
+    
+    # Check if there are still multiple candidates, then TODO
+    if len(result[0]) > 1:
+        print('WARNING: multiple final matches found, returing one', result)
+    
     match_vid = result[0][0]
     match_seg = best_dist_indices[result[0][0]][result[1][0]]
     
     if prints or printRes:
         print('video {:05d} - segment {}'.format(match_vid+1, match_seg))
 
-    return videos[match_vid].segments[match_seg]
+    seg = videos[match_vid].segments[match_seg]
+    return ('{:05d}.mp4'.format(match_vid+1), seg.frame_start + 0, seg.frame_end + 20 * 27)
+ 
 
 
 def find(target_histograms, videos, histMetric, prints = False, printRes = False):
