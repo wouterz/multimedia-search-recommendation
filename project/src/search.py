@@ -13,33 +13,34 @@ def isSimilarityMetric(metric):
 
 
 def findFrame(target_histograms, videos, histMetric, best_n_full_hist = 10, channels = [0, 1], prints = False, printRes = False):
-        
+    """
+    Try to find the target_histograms (Array containing histograms per channel(H/s)), in the videos.   
+    """
+
+    # Check if chosen metric is similarity or dissimilarity
     isSimilarity = isSimilarityMetric(histMetric)
     
-    # 2D array, an array for each video containing the distance per segment
+    # Array containing the distances per video for each segment
     distances = []
     
-    for video in videos:
-        
-        # Array to store the distance per segment
-        segment_dist = []
-        
-        for segment in video.segments:  # Video has many segments
-            frame_dist = []
-            
-            for frame_hists in segment.histograms:  # Segment has many frames (list of histograms per frame)
-                dist = 0
+    for video in videos:                                             # Loop over all videos
+        segment_dist = []                                            # Array to store the distance per segment
 
-                # Sum distance per channel (index '0' is full histogram)
-#                 for channel, h in enumerate(frame_hists[0]): # TODO: maybe merge channels and check simultaneously for speed
-                for channel in channels:
-                    dist += cv2.compareHist(target_histograms[0][channel], frame_hists[0][channel], histMetric)
+        for segment in video.segments:                               # Video has many segments
+            frame_dist = []                                          # Array to store distances by per frame
             
+            for frame_hists in segment.histograms:          # Segment has many frames (list of histograms per frame)
+                dist = 0                                    # Set distance to zero
+
+                for channel in channels:                    # Sum distance per channel (index '0' is full histogram)
+                    dist += cv2.compareHist(target_histograms[0][channel], frame_hists[0][channel], histMetric)
+
                 frame_dist.append(dist)
             
             if prints:
                 print('frame_dists', frame_dist)
-        
+                
+            # Currenly only interested in the best score per segment, to find the matching segment
             if isSimilarity:
                 segment_dist.append(max(frame_dist))
             else:
@@ -70,11 +71,14 @@ def findFrame(target_histograms, videos, histMetric, best_n_full_hist = 10, chan
                 values.append(distances[i][ind])
         print('values', values)
 
-    sub_distances = []
+        
+        
+    # Now using the most likely segments, take closer look using sub_grids    
     
-    # TODO: maybe invert this loop? First iterate best_dist_indices and then loop videos?
+    # Array containing the distances per video for each segment
+    sub_distances = []
     for i, video in enumerate(videos):
-        segment_dist = []
+        segment_dist = []                                                   # Array to store the best distance per segment
         
         for segment_index in best_dist_indices[i]:
             segment = video.segments[segment_index]
@@ -83,17 +87,16 @@ def findFrame(target_histograms, videos, histMetric, best_n_full_hist = 10, chan
                 dist = 0
 
                 for hist_index, hists in enumerate(frame_hists):            # Frame has many (sub-)histograms
-#                     if hist_index == 0:
-#                         continue
+                    # Skip the first one as this is the full histogram
+                    if hist_index == 0:
+                        continue
                         
-
-                    # Sum distance per channel
-#                     for channel, h in enumerate(hists):
-                    for channel in channels:
+                    for channel in channels:                                # Sum distance per channel
                         dist += cv2.compareHist(target_histograms[hist_index][channel], hists[channel], histMetric)
 
                 frame_dist.append(dist)
                     
+            # Currenly only interested in the best score per segment, to find the matching segment
             if isSimilarity:
                 segment_dist.append(max(frame_dist))
             else:
@@ -102,6 +105,9 @@ def findFrame(target_histograms, videos, histMetric, best_n_full_hist = 10, chan
         sub_distances.append(segment_dist)
     
     # Find index of maximum value in matrix
+    # TODO Check and handle if there are multiple candidates....
+    if prints:
+        print('sub_distances', sub_distances)
     result = []
     if isSimilarity:
         result = np.where(sub_distances == np.amax(sub_distances))
@@ -111,13 +117,13 @@ def findFrame(target_histograms, videos, histMetric, best_n_full_hist = 10, chan
     match_vid = result[0][0]
     match_seg = best_dist_indices[result[0][0]][result[1][0]]
     
-    if printRes:
+    if prints or printRes:
         print('video {:05d} - segment {}'.format(match_vid+1, match_seg))
 
     return videos[match_vid].segments[match_seg]
 
 
-def find(target_histograms, videos, histMetric, prints = False):
+def find(target_histograms, videos, histMetric, prints = False, printRes = False):
     isSimilarity = isSimilarityMetric(histMetric)
     
     # 2D array, an array for each video containing the distance per segment
@@ -137,7 +143,7 @@ def find(target_histograms, videos, histMetric, prints = False):
                 
                 # Sum distance per channel (index '0' is full histogram)
                 for channel, h in enumerate(frame_hists[0]): # TODO: maybe merge channels and check simultaneously for speed
-                    dist += cv2.compareHist(target_histograms[frame_index][0][channel], h, histMetric)
+                    dist += cv2.compareHist(target_histograms[0][0][channel], h, histMetric)
                 
             segment_dist.append(dist)
         distances.append(segment_dist)
@@ -167,13 +173,12 @@ def find(target_histograms, videos, histMetric, prints = False):
                     
                     # Sum distance per channel
                     for channel, h in enumerate(hists):
-                        dist += cv2.compareHist(target_histograms[frame_index][hist_index][channel], h, histMetric)
+                        dist += cv2.compareHist(target_histograms[0][hist_index][channel], h, histMetric)
                     
             segment_dist.append(dist)    
             
         sub_distances.append(segment_dist)
 
-    print('subdistances len', len(sub_distances))
     
     # Find index of maximum value in matrix
     result = []

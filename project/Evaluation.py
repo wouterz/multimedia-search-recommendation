@@ -3,14 +3,14 @@
 
 # # Evaluation
 
-# In[74]:
+# In[120]:
 
 
 get_ipython().run_line_magic('load_ext', 'autoreload')
 get_ipython().run_line_magic('autoreload', '2')
 
 
-# In[75]:
+# In[121]:
 
 
 import pandas as pd
@@ -26,10 +26,10 @@ import cv2
 
 # ## Parameters
 
-# In[76]:
+# In[122]:
 
 
-NUM_VIDEOS = 2
+NUM_VIDEOS = 20
 GRID_SIZE = 2
 BINS = [180, 180]
 HIST_FRAME_SKIP = 20
@@ -42,14 +42,14 @@ def printParams():
 
 # ## Load training set
 
-# In[77]:
+# In[123]:
 
 
 printParams()
 training_set = prep.load_training_set(range(1, NUM_VIDEOS+1), GRID_SIZE, BINS, HIST_FRAME_SKIP, force_refresh=REFRESH)
 
 
-# In[78]:
+# In[124]:
 
 
 # Print statistics
@@ -63,7 +63,7 @@ print("Num histograms:      {:d}".format( np.sum([np.sum([len(segment.histograms
 
 # ## Select random test set
 
-# In[79]:
+# In[125]:
 
 
 test_n_segments = 100
@@ -81,7 +81,7 @@ for i in range(test_n_segments):
     labels.append(segment)
 
 
-# In[80]:
+# In[126]:
 
 
 # Print statistics
@@ -93,7 +93,7 @@ print("Num. histograms: {:d}".format( np.sum([len(histogram) for histogram in te
 
 # ## Run model on test set
 
-# In[81]:
+# In[89]:
 
 
 printParams()
@@ -116,7 +116,7 @@ for ch in [[0], [1], [0, 1]]:
 # %timeit search.find(test_set[0], training_set, cv2.HISTCMP_KL_DIV)
 
 
-# In[82]:
+# In[133]:
 
 
 printParams()
@@ -127,12 +127,13 @@ for i, segment_histograms in enumerate(test_set):
     print('\rSearching segment {}/{}'.format(i+1, len(test_set)), end='', flush=True)
     
     x = random.choice(range(len(segment_histograms)))
-    results.append(search.findFrame(segment_histograms[0], training_set, 5, cv2.HISTCMP_CHISQR_ALT))
+#     results.append(search.find(segment_histograms, training_set, 5, cv2.HISTCMP_CHISQR_ALT))
+    results.append(search.findFrame(segment_histograms[0], training_set, 1, cv2.HISTCMP_CHISQR_ALT))
 
 
 # ## Evaluate performance
 
-# In[83]:
+# In[134]:
 
 
 evaluate_segments(results, labels)
@@ -140,11 +141,11 @@ evaluate_segments(results, labels)
 
 # # Manual Evaluation
 
-# In[73]:
+# In[99]:
 
 
 #Manually check what happens
-test_vid = 1
+test_vid = 6
 for i in range(len(training_set[test_vid].segments)):
     
     hists = training_set[test_vid].segments[i].histograms
