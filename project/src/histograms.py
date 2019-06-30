@@ -11,13 +11,15 @@ def frame_to_hs_hist(hsv_frame, bins):
     ranges = [[0, 180], [0, 256]]
     
     for i in channels:
-        histograms.append(cv2.calcHist(
+        
+        hist = cv2.calcHist(
             [hsv_frame], # Source image
             [i],         # Channel index
             None,        # Optional mask
             [bins[i]],   # Histogram size
-            ranges[i]    # Range
-        ))
+            ranges[i])   # Range
+        
+        histograms.append(hist)
 
     return histograms
 #   return (histogram / np.sum(histogram)).reshape((2, 8))  # Return a normalized histogram.
@@ -32,13 +34,13 @@ def compute_histograms(frame, hist_func=frame_to_hs_hist, grid_size=2, bins=[180
     hsv_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     
     # Initialize array with main histogram
-    histograms = frame_to_hs_hist(hsv_frame, bins)
+    histograms = [hist_func(hsv_frame, bins)]
     
     # Split frame into grids and calculate histograms
     # TODO: why save these at all and not just 'generate' and check them only for the best matches?
     if grid_size and grid_size > 1:
         for sub_frame in split_frame(hsv_frame, grid_size):
-            histograms += hist_func(sub_frame, bins)
+            histograms.append(hist_func(sub_frame, bins))
 
     return histograms
 

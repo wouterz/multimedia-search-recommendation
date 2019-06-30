@@ -1,6 +1,7 @@
 from .Video import Video
 from .Segment import Segment
 import random
+import numpy as np
 
 def pick_test_segments(training_set: [Video], n_segments=100):
     """
@@ -119,7 +120,49 @@ def evaluate_segments(predicted: [Segment], labels: [Segment]):
     print("Segment evaluation:")
     print("Correct movies: {:d}".format(movie_correct))
     print("Wrong movies:   {:d}".format(movie_wrong))
-    print("Total:   {:d}".format(total))
-    print("Start frame distance (correct movies only):   {:d}".format(start_frame_dist))
-    print("Avg Start frame distance (correct movies only):   {:f}".format(start_frame_dist/total))
-    print("TPR:     {:.1f}%".format(fraction * 100), flush=True)
+    print("Total:          {:d}".format(total))
+    print("TPR:     {:.1f}%".format(fraction * 100))
+    print("\nStart frame distance (correct movies only):   {:d}".format(start_frame_dist))
+    print("Avg Start frame distance (correct movies only): {:.2f}".format(start_frame_dist/total), flush=True)
+
+
+def evaluate(predicted, labels):
+    """
+    Calculate error metrics of predicted labels.
+    Input: 3-tuple (String, int, int) with (video_id, start_frame, end_frame)
+    """
+    
+    assert len(predicted) == len(labels), "Different number of predictions and labels."
+    
+    total = len(predicted)
+    movie_correct = 0
+    location_correct = 0
+    
+    start_frame_dist = []    
+    overlaps = []
+    
+    for pred, label in zip(predicted, labels):
+        
+        dist = 0
+        
+        if pred[0] == label[0]: # Check if movie is correct
+            movie_correct += 1
+            
+            dist = abs(pred[1] - label[1])    
+            start_frame_dist.append(dist)
+            
+            correct = False
+            if label[1] <= pred[1] <= label[2]:
+                correct = True
+                location_correct += 1
+
+            
+#         print("Label: ({:s}, {:d}, {:d}), predicted: ({:s}, {:d}), location correct: {!s:}, start_frame_dist: {:d}, overlap: {:d}".format(
+#             *label,
+#             *pred,
+#             correct,
+#             dist
+#         ))
+        
+    # Return (# movies correct, # correct location, # total movies) and (avg start frame distance, std)
+    return (movie_correct, location_correct, total), (np.mean(start_frame_dist), np.std(start_frame_dist))
