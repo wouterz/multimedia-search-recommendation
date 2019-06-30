@@ -8,6 +8,7 @@ import os
 import pickle
 import itertools
 import random
+from joblib import Parallel, delayed
 
 DATA_PATH = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data'))
 SEGMENTS_PATH = os.path.join(DATA_PATH, "segments")
@@ -22,25 +23,28 @@ def load_training_set(video_set, grid_size, bins, skip_val, force_refresh=False)
     video_set: List of integers corresponding to video files (5 char left zero padded).
     """
 
-    print('Loading / processing dataset...', flush=True)
-
-    videos = []
-
-    for i in video_set:
-        # Int to movie name
-        name = "{:05d}".format(i)
-        print('\rprocessing {}'.format(name), end='', flush=True)
-
-        # Process
-        video = process_video(name, grid_size, bins, skip_val, force_refresh)
-        if video is not None: videos.append(video)
-
-    print('\rDone processing!', end='', flush=True)
+    if force_refresh:
+    
+        # Process in parallel if we need to refresh (much faster)
+        videos = Parallel(n_jobs=-1, prefer="threads")(
+            delayed(process_video)(i, grid_size, bins, skip_val, force_refresh) for i in video_set)
+        
+        # Remove None values
+        list(filter(None.__ne__, videos))
+        
+    else:
+        
+        videos = []
+        for i in video_set:
+            video = process_video(i, grid_size, bins, skip_val, force_refresh)
+            if video is not None: videos.append(video)
 
     return videos
 
 
-def process_video(name: str, grid_size : int, bins: [], skip_val, force_refresh=False) -> Video:
+def process_video(i: int, grid_size : int, bins: [], skip_val, force_refresh=False) -> Video:
+    
+    name = "{:05d}".format(i)
     
     pickle_dir = os.path.join(PICKLE_PATH, str(grid_size), '_'.join(str(b) for b in bins), str(skip_val))
     
