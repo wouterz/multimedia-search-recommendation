@@ -125,19 +125,20 @@ def findFrame(target_histograms, videos, histMetric, best_n_full_hist = 10, chan
         print('sub_distances', sub_distances)
 
     result = np.where(sub_distances == (np.amax(sub_distances) if isSimilarity else np.amin(sub_distances)))
-
+    result_idx = np.argwhere(sub_distances == (np.amax(sub_distances) if isSimilarity else np.amin(sub_distances)))
+    
     # Check if there are still multiple candidates, then TODO
     if warnings and len(result[0]) > 1:
         print('WARNING: multiple final matches found, returing one from candidates:', list(zip(result[0], result[1])))
     
     match_vid = result[0][0]
     match_seg = best_segment_dist_indices[result[0][0]][result[1][0]]
-    # TODO for more accuracy
-    # matched_frame = 
+    matched_frame = result_idx[0][1]
+        
     
     if prints:
         print('video {:05d} - segment {}'.format(match_vid+1, match_seg))
 
     seg = videos[match_vid].segments[match_seg]
-    matched_frame = seg.frame_start #+ (hist_frame_skip * matched_frame) 
-    return ('{:05d}.mp4'.format(match_vid+1), matched_frame)
+    matched_frame_start = seg.frame_start + int(matched_frame * hist_frame_skip)
+    return ('{:05d}.mp4'.format(match_vid+1), matched_frame_start)

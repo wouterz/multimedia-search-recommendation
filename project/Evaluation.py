@@ -26,13 +26,13 @@ import cv2
 
 # ## Parameters
 
-# In[73]:
+# In[191]:
 
 
-NUM_VIDEOS = 10
+NUM_VIDEOS = 5
 GRID_SIZE = 2
-BINS = [180, 256]
-HIST_FRAME_SKIP = 3
+BINS = [180/1, int(256/1)]
+HIST_FRAME_SKIP = 1
 REFRESH = False
 
 # vergeet gebruikte params soms dus print ze maar afentoe
@@ -42,21 +42,21 @@ def printParams():
 
 # ## Load training set / generate test set
 
-# In[74]:
+# In[192]:
 
 
 printParams()
 training_set = prep.load_training_set(range(1, NUM_VIDEOS+1), GRID_SIZE, BINS, HIST_FRAME_SKIP, force_refresh=REFRESH)
 
 
-# In[75]:
+# In[193]:
 
 
 # Set of 100 custom fragments with duration 20sec
 test_set, labels = generate_test_segments(training_set, n=100, duration=20)
 
 
-# In[76]:
+# In[194]:
 
 
 # Print statistics
@@ -73,20 +73,20 @@ print("Size: {:d}".format( len(test_set) ))
 
 # # Small manual test
 
-# In[87]:
+# In[203]:
 
 
 pr = False
 for i in range(0,1):
     for j in range(5):
         x = random.choice(range(len(test_set[i])))
-        found = search.findFrame(test_set[i][x], training_set, cv2.HISTCMP_CHISQR, 10, prints= pr, warnings=pr)
+        found = search.findFrame(test_set[i][x], training_set, cv2.HISTCMP_CHISQR, 5, hist_frame_skip=HIST_FRAME_SKIP, prints= pr, warnings=pr)
         print('Found {} - Expected {}'.format(found, labels[i]))
 
         
-test_histograms = prep.get_test_video("{:05d}".format(9), GRID_SIZE, BINS)
+test_histograms = prep.get_test_video("{:05d}".format(5), GRID_SIZE, BINS)
 for i in range(10):
-    found = search.findFrame(test_histograms[i], training_set, cv2.HISTCMP_CHISQR, 10, prints= pr, warnings=pr)
+    found = search.findFrame(test_histograms[i], training_set, cv2.HISTCMP_CHISQR, 10,                              hist_frame_skip=HIST_FRAME_SKIP, prints= pr, warnings=pr)
     print(found)
 
 
@@ -95,7 +95,7 @@ for i in range(10):
 # In[9]:
 
 
-for method in [cv2.HISTCMP_CORREL, cv2.HISTCMP_CHISQR, cv2.cv2.HISTCMP_INTERSECT,
+for method in [cv2.HISTCMP_CORREL, cv2.HISTCMP_CHISQR, cv2.HISTCMP_INTERSECT,
                cv2.HISTCMP_BHATTACHARYYA, cv2.HISTCMP_CHISQR_ALT, cv2.HISTCMP_KL_DIV]:
 # for method in [cv2.HISTCMP_BHATTACHARYYA]:
     get_ipython().run_line_magic('timeit', '-n 1 search.findFrame_old(test_set[0][0], training_set, method, warnings = False)')
@@ -115,7 +115,7 @@ results = []
 for i, histogram in enumerate(test_set):
     print("\rSearching segment {}/{}".format(i+1, len(test_set), len(histogram)), end='', flush=True)
     
-    results.append(search.findFrame(histogram[0], training_set, cv2.HISTCMP_CHISQR_ALT, 2, warnings = False))
+    results.append(search.findFrame(histogram[0], training_set, cv2.HISTCMP_CHISQR_ALT, 2,                                     hist_frame_skip=HIST_FRAME_SKIP, warnings = False))
 
 
 # ## Evaluate performance
@@ -125,12 +125,13 @@ for i, histogram in enumerate(test_set):
 
 movie_results, start_frame_dist = evaluate(results, labels)
 
-fractions = (movie_results[0] / movie_results[2]*100 if movie_results[2] > 0 else 0, movie_results[1] / movie_results[0]*100 if movie_results[0] > 0 else 0)
+fractions = (movie_results[0] / movie_results[2]*100 if movie_results[2] > 0 else 0,              movie_results[1] / movie_results[0]*100 if movie_results[0] > 0 else 0)
 
 print("TEST RESULTS\n")
 
 printParams()
-print("\nCorrect video:                   {:d} / {:d} ({:.1f}%)".format(movie_results[0], movie_results[2], fractions[0]))
-print("Inside fragment:                 {:d} / {:d} ({:.1f}%)".format(movie_results[1], movie_results[0], fractions[1]))
-print("Average distance to start frame: {:.0f} +/- {:.0f} frames (approx. {:.1f} sec)".format(start_frame_dist[0], start_frame_dist[1], start_frame_dist[0]/25))
+print("\nCorrect video: {:d} / {:d} ({:.1f}%)".format(movie_results[0], movie_results[2], fractions[0]))
+print("Inside fragment: {:d} / {:d} ({:.1f}%)".format(movie_results[1], movie_results[0], fractions[1]))
+print("Average distance to start frame: {:.0f} +/- {:.0f} frames (approx. {:.1f} sec)".format(
+    start_frame_dist[0], start_frame_dist[1], start_frame_dist[0]/25))
 

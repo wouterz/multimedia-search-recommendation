@@ -103,7 +103,8 @@ def create_segment(movie_id: str, video_frames, row: np.ndarray, grid_size : int
         if i % skip_val == 0:
             frame_histograms = compute_histograms(next(video_frames), grid_size=grid_size, bins=bins)
             s.histograms.append(frame_histograms)
-        next(video_frames)
+        else:
+            next(video_frames)
         
         # Only convert the first frame for now
 #         break;
