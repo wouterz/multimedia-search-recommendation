@@ -26,13 +26,13 @@ import cv2
 
 # ## Parameters
 
-# In[169]:
+# In[252]:
 
 
-NUM_VIDEOS = 20
+NUM_VIDEOS = 100
 GRID_SIZE = 3
 BINS = [180, 256]
-HIST_FRAME_SKIP = 10
+HIST_FRAME_SKIP = 20
 REFRESH = False
 
 # vergeet gebruikte params soms dus print ze maar afentoe
@@ -42,21 +42,21 @@ def printParams():
 
 # ## Load training set / generate test set
 
-# In[170]:
+# In[ ]:
 
 
 printParams()
 training_set = prep.load_training_set(range(1, NUM_VIDEOS+1), GRID_SIZE, BINS, HIST_FRAME_SKIP, force_refresh=REFRESH)
 
 
-# In[171]:
+# In[247]:
 
 
 # Set of 100 custom fragments with duration 20sec
 test_set, labels = generate_test_segments(training_set, n=100, duration=20)
 
 
-# In[172]:
+# In[248]:
 
 
 # Print statistics
@@ -71,26 +71,26 @@ print("TEST SET:")
 print("Size: {:d}".format( len(test_set) ))
 
 
+# # Small manual test
+
+# In[251]:
+
+
+pr = True
+for i in range(1):
+#     x = random.choice(range(len(test_set[i])))
+    found = search.findFrame(test_set[i][0], training_set, cv2.HISTCMP_CHISQR, 2, prints= pr, warnings=pr)
+    print('Found {} - Expected {}'.format(found, labels[i]))
+
+
 # ## Run model on test set
 
-# In[177]:
+# In[204]:
 
 
-labels[:10]
-
-
-# In[191]:
-
-
-# for method in [cv2.HISTCMP_CORREL, cv2.HISTCMP_CHISQR, cv2.cv2.HISTCMP_INTERSECT,
-#                cv2.HISTCMP_BHATTACHARYYA, cv2.HISTCMP_CHISQR_ALT, cv2.HISTCMP_KL_DIV]:
-#     print('{}'.format(method))
-#     %timeit -n 10 search.findFrame(test_set[0][0], training_set, method)
-
-# %timeit -n 10
-search.findFrame(test_set[1][0], training_set, cv2.HISTCMP_CHISQR_ALT, 3)
-
-
+for method in [cv2.HISTCMP_CORREL, cv2.HISTCMP_CHISQR, cv2.cv2.HISTCMP_INTERSECT,
+               cv2.HISTCMP_BHATTACHARYYA, cv2.HISTCMP_CHISQR_ALT, cv2.HISTCMP_KL_DIV]:
+    get_ipython().run_line_magic('timeit', '-n 10 search.findFrame(test_set[0][0], training_set, method, warnings = False)')
 
 
 # for ch in [[0], [1], [0, 1]]:
@@ -98,21 +98,22 @@ search.findFrame(test_set[1][0], training_set, cv2.HISTCMP_CHISQR_ALT, 3)
 #     %timeit -n 10 search.findFrame(test_set[0], training_set, cv2.HISTCMP_CORREL, channels=ch)
 
 
-# In[126]:
+# In[220]:
 
 
 results = []
 
 for i, histogram in enumerate(test_set):
-    print('\rSearching segment {}/{}'.format(i+1, len(test_set)), end='', flush=True)
+    print('\rSearching segment {}/{} - Histograms {}'.format(i+1, len(test_set), len(histogram), end='', flush=True))
     
-#     results.append(search.find(histogram, training_set, cv2.HISTCMP_INTERSECT))
-    results.append(search.findFrame(histogram[0], training_set, cv2.HISTCMP_CHISQR_ALT, 10))
+    
+    
+    results.append(search.findFrame(histogram[0], training_set, cv2.HISTCMP_CHISQR_ALT, 2, warnings = False))
 
 
 # ## Evaluate performance
 
-# In[52]:
+# In[221]:
 
 
 evaluate_segments(results, labels)
