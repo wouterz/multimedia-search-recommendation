@@ -25,6 +25,135 @@ def findFrame(target_histograms, videos, histMetric, best_n_full_hist = 10, chan
     # Array containing the distances per video for each segment
     distances = []
     
+    for video in videos:                                         # Loop over all videos
+        segment_dist = np.zeros(len(video.segments))             # Array to store the distance per segment
+
+        i = 0
+        for segment in video.segments:                               # Video has many segments
+            frame_dist = np.zeros(len(segment.histograms))           # Array to store distances by per frame
+            
+            j = 0
+            for frame_hists in segment.histograms:          # Segment has many frames (list of histograms per frame)
+                dist = 0                                    # Set distance to zero
+                
+                for channel in channels:                    # Sum distance per channel (index '0' is full histogram)
+                    dist += cv2.compareHist(target_histograms[0][channel], frame_hists[0][channel], histMetric)
+
+                frame_dist[j] = dist
+                j+=1
+            
+            if prints:
+                print('frame_dists', frame_dist)
+            
+            # Currenly only interested in the best score per segment, to find the matching segment
+            segment_dist[i] = frame_dist.max() if isSimilarity else frame_dist.min()
+            i+=1
+
+        distances.append(segment_dist)
+    
+    if prints:
+        print('distances', distances)
+    
+    # Compute top n segments for each video
+    best_segment_dist_indices = []
+    for d in distances:
+        
+        n_best = min(best_n_full_hist, len(d))
+        
+        if isSimilarity:
+            best_n_idx = np.argpartition(d, -n_best)[-n_best:]
+            values = [d[idx] for idx in best_n_idx]
+            if warnings and values.count(values[0]) == n_best:
+                print('WARNING: n_best too small might miss best value', values)
+            best_segment_dist_indices.append(best_n_idx)
+        else:
+            best_n_idx = np.argpartition(d, n_best)[:n_best]
+            values = [d[idx] for idx in best_n_idx]
+            if warnings and values.count(values[0]) == n_best:
+                print('WARNING: n_best too small might miss best value', values)
+            best_segment_dist_indices.append(best_n_idx)
+
+        
+    if prints:
+        print('best_segment_dist_indices', best_segment_dist_indices)
+        values = []
+        for i, tmp in enumerate(best_segment_dist_indices):
+            for ind in tmp:
+                values.append(distances[i][ind])
+        print('values', values)
+
+        
+        
+    # Now using the most likely segments, take closer look using sub_grids    
+    
+    # Array containing the distances per video for each segment
+    sub_distances = []
+    for i, video in enumerate(videos):
+        
+        segment_dist = np.zeros(len(best_segment_dist_indices[i]))                                                   # Array to store the best distance per segment
+        z = 0
+        
+        for segment_index in best_segment_dist_indices[i]:                  # Check the segments that matched in the previous
+            segment = video.segments[segment_index]
+            
+            frame_dist = np.zeros(len(segment.histograms))
+            j = 0
+            
+            for frame_hists in segment.histograms:  # Segment has many frames (list of histograms per frame)
+                dist = 0
+
+                for hist_index, hists in enumerate(frame_hists):            # Frame has many (sub-)histograms
+                    
+                    # Skip the first one as these are the full histogram
+                    if hist_index < 1: continue
+                        
+                    for channel in channels:                                # Sum distance per channel
+                        dist += cv2.compareHist(target_histograms[hist_index][channel], hists[channel], histMetric)
+
+                frame_dist[j] = dist
+                j += 1
+                    
+            # Currenly only interested in the best score per segment, to find the matching segment
+            segment_dist[z] = frame_dist.max() if isSimilarity else frame_dist.min()
+            z += 1
+            
+        sub_distances.append(segment_dist)
+    
+    # Find index of maximum value in matrix
+    # TODO Check and handle if there are multiple candidates....
+    if prints:
+        print('sub_distances', sub_distances)
+
+    result = np.where(sub_distances == (np.amax(sub_distances) if isSimilarity else np.amin(sub_distances)))
+
+    # Check if there are still multiple candidates, then TODO
+    if warnings and len(result[0]) > 1:
+        print('WARNING: multiple final matches found, returing one from candidates:', list(zip(result[0], result[1])))
+    
+    match_vid = result[0][0]
+    match_seg = best_segment_dist_indices[result[0][0]][result[1][0]]
+    
+    if prints:
+        print('video {:05d} - segment {}'.format(match_vid+1, match_seg))
+
+    seg = videos[match_vid].segments[match_seg]
+    return ('{:05d}.mp4'.format(match_vid+1), seg.frame_start)
+ 
+
+    
+def findFrame_old(target_histograms, videos, histMetric, best_n_full_hist = 10, channels = [0, 1], prints = False, warnings = True):
+    """
+    Try to find the target_histograms (Array containing histograms per channel(H/s)), in the videos.   
+    """
+
+    # Check if chosen metric is similarity or dissimilarity
+    isSimilarity = isSimilarityMetric(histMetric)
+    
+    assert best_n_full_hist >= 2, 'If smaller than 2 never know if top list is exhaustive'
+    
+    # Array containing the distances per video for each segment
+    distances = []
+    
     for video in videos:                                             # Loop over all videos
         segment_dist = []                                            # Array to store the distance per segment
 
@@ -59,6 +188,7 @@ def findFrame(target_histograms, videos, histMetric, best_n_full_hist = 10, chan
     # Compute top n segments for each video
     best_segment_dist_indices = []
     for d in distances:
+        
         n_best = min(best_n_full_hist, len(d))
         if isSimilarity:
             best_n_idx = np.argpartition(d, -n_best)[-n_best:]
@@ -72,7 +202,7 @@ def findFrame(target_histograms, videos, histMetric, best_n_full_hist = 10, chan
             if warnings and values.count(values[0]) == n_best:
                 print('WARNING: n_best too small might miss best value', values)
             best_segment_dist_indices.append(best_n_idx)
-
+        
     if prints:
         print('best_segment_dist_indices', best_segment_dist_indices)
         values = []
@@ -136,9 +266,8 @@ def findFrame(target_histograms, videos, histMetric, best_n_full_hist = 10, chan
         print('video {:05d} - segment {}'.format(match_vid+1, match_seg))
 
     seg = videos[match_vid].segments[match_seg]
-    return ('{:05d}.mp4'.format(match_vid+1), seg.frame_start)
- 
-
+    return ('{:05d}.mp4'.format(match_vid+1), seg.frame_start + 0, seg.frame_end + 20 * 27)
+    
 
 def find(target_histograms, videos, histMetric, prints = False, printRes = False):
     isSimilarity = isSimilarityMetric(histMetric)
