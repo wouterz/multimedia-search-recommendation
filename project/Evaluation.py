@@ -49,14 +49,14 @@ printParams()
 training_set = prep.load_training_set(range(1, NUM_VIDEOS+1), GRID_SIZE, BINS, HIST_FRAME_SKIP, force_refresh=REFRESH)
 
 
-# In[254]:
+# In[273]:
 
 
 # Set of 100 custom fragments with duration 20sec
 test_set, labels = generate_test_segments(training_set, n=100, duration=20)
 
 
-# In[255]:
+# In[271]:
 
 
 # Print statistics
@@ -97,22 +97,20 @@ for method in [cv2.HISTCMP_CORREL, cv2.HISTCMP_CHISQR, cv2.cv2.HISTCMP_INTERSECT
 #     %timeit -n 10 search.findFrame(test_set[0], training_set, cv2.HISTCMP_CORREL, channels=ch)
 
 
-# In[262]:
+# In[274]:
 
 
 results = []
 
 for i, histogram in enumerate(test_set):
-    print('\rSearching segment {}/{} - Histograms {}'.format(i+1, len(test_set), len(histogram), end='', flush=True))
-    
-    
+    print('\rSearching segment {}/{}'.format(i+1, len(test_set), len(histogram), end='', flush=True))
     
     results.append(search.findFrame(histogram[0], training_set, cv2.HISTCMP_CHISQR_ALT, 2, warnings = False))
 
 
 # ## Evaluate performance
 
-# In[267]:
+# In[275]:
 
 
 evaluate_segments(results, labels)

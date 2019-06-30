@@ -33,14 +33,14 @@ def generate_test_segments(training_set: [Video], n=100, duration=20):
     test_set = []
     labels = []
     
-    for i in range(n):
+    i = 0
+    while i < n:
     
         # Find random video
         video = random.choice(training_set)
         
         # Skip videos that are not long enough
         if video.duration() < duration:
-            i -= 1
             continue
         
         # Calculate required number of frames in test segment
@@ -82,12 +82,17 @@ def generate_test_segments(training_set: [Video], n=100, duration=20):
                 
                 histograms += segment.histograms[slice_start:slice_end]
         
+        # TODO Sometimes selected range seems to have no histogram? 
+        if len(histograms) == 0:
+            continue
+        
         # Add histogram list to test set
         test_set.append(histograms)
         
         # Add labels
         labels.append( (video.name, selection_start_frame, selection_end_frame) )
         
+        i += 1
     return test_set, labels
 
 
