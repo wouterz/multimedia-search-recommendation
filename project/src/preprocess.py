@@ -7,6 +7,7 @@ from .histograms import compute_histograms
 import os
 import pickle
 import itertools
+import random
 
 DATA_PATH = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data'))
 SEGMENTS_PATH = os.path.join(DATA_PATH, "segments")
@@ -108,3 +109,37 @@ def create_segment(movie_id: str, video_frames, row: np.ndarray, grid_size : int
 #         break;
     
     return s
+
+def get_test_video(name: str, grid_size : int, bins: []):
+    video_path = os.path.join(MOVIE_PATH, name + ".mp4")
+    segments_path = os.path.join(SEGMENTS_PATH, name + ".tsv")
+
+    # Check if file exists
+    if not os.path.isfile(video_path):
+        print("Cannot open video %s.mp4 -- File does not exist." % name)
+        return
+
+    # Load movie in memory
+    source_video = VideoReader()
+    source_video.open(video_path)
+
+    nr_frames_to_get = int(source_video.get_frame_rate() * 20)
+    start_frame = random.choice(range(0, (source_video.get_number_of_frames() - nr_frames_to_get)))
+    end_frame = start_frame+nr_frames_to_get
+    print('start_frame', start_frame, end_frame, nr_frames_to_get)
+
+    i = 0
+    frames = source_video.get_frames()
+    histograms = []
+    for f in frames:
+        if i < start_frame:
+            i += 1
+            continue
+        
+        if i == end_frame:
+            break
+        
+        histograms.append(compute_histograms(f, grid_size=grid_size, bins=bins))
+        i += 1
+
+    return histograms
