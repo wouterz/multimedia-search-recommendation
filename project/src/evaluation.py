@@ -33,14 +33,14 @@ def generate_test_segments(training_set: [Video], n=100, duration=20):
     test_set = []
     labels = []
     
-    for i in range(n):
+    i = 0
+    while i < n:
     
         # Find random video
         video = random.choice(training_set)
         
         # Skip videos that are not long enough
         if video.duration() < duration:
-            i -= 1
             continue
         
         # Calculate required number of frames in test segment
@@ -82,12 +82,17 @@ def generate_test_segments(training_set: [Video], n=100, duration=20):
                 
                 histograms += segment.histograms[slice_start:slice_end]
         
+        # TODO Sometimes selected range seems to have no histogram? 
+        if len(histograms) == 0:
+            continue
+        
         # Add histogram list to test set
         test_set.append(histograms)
         
         # Add labels
         labels.append( (video.name, selection_start_frame, selection_end_frame) )
         
+        i += 1
     return test_set, labels
 
 
@@ -95,18 +100,26 @@ def evaluate_segments(predicted: [Segment], labels: [Segment]):
     
     movie_correct = 0
     movie_wrong = 0
+    start_frame_dist = 0
 
-    for segment, label in zip(predicted, labels):
+    for pred, label in zip(predicted, labels):
 
         # Check if movie is correct
-        if segment == label: movie_correct += 1
+        if pred[0] == label[0]:
+            movie_correct += 1
+            start_frame_dist += abs(pred[1]-label[1])
         else: movie_wrong += 1
+            
+        
 
     total = movie_correct + movie_wrong
     fraction = movie_correct / total if total > 0 else 0
+    
 
     print("Segment evaluation:")
-    print("Correct: {:d}".format(movie_correct))
-    print("Wrong:   {:d}".format(movie_wrong))
+    print("Correct movies: {:d}".format(movie_correct))
+    print("Wrong movies:   {:d}".format(movie_wrong))
     print("Total:   {:d}".format(total))
+    print("Start frame distance (correct movies only):   {:d}".format(start_frame_dist))
+    print("Avg Start frame distance (correct movies only):   {:f}".format(start_frame_dist/total))
     print("TPR:     {:.1f}%".format(fraction * 100), flush=True)
