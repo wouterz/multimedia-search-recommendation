@@ -26,7 +26,7 @@ import cv2
 
 # ## Parameters
 
-# In[191]:
+# In[233]:
 
 
 NUM_VIDEOS = 5
@@ -42,21 +42,23 @@ def printParams():
 
 # ## Load training set / generate test set
 
-# In[192]:
+# In[234]:
 
 
 printParams()
 training_set = prep.load_training_set(range(1, NUM_VIDEOS+1), GRID_SIZE, BINS, HIST_FRAME_SKIP, force_refresh=REFRESH)
 
 
-# In[193]:
+# In[235]:
 
 
 # Set of 100 custom fragments with duration 20sec
-test_set, labels = generate_test_segments(training_set, n=100, duration=20)
+test_set, labels = prep.get_test_video_set(NUM_VIDEOS, GRID_SIZE, BINS, n=5)
+
+# test_set, labels = generate_test_segments(training_set, n=100, duration=20)
 
 
-# In[194]:
+# In[236]:
 
 
 # Print statistics
@@ -73,7 +75,7 @@ print("Size: {:d}".format( len(test_set) ))
 
 # # Small manual test
 
-# In[203]:
+# In[237]:
 
 
 pr = False
@@ -84,10 +86,11 @@ for i in range(0,1):
         print('Found {} - Expected {}'.format(found, labels[i]))
 
         
-test_histograms = prep.get_test_video("{:05d}".format(5), GRID_SIZE, BINS)
-for i in range(10):
-    found = search.findFrame(test_histograms[i], training_set, cv2.HISTCMP_CHISQR, 10,                              hist_frame_skip=HIST_FRAME_SKIP, prints= pr, warnings=pr)
-    print(found)
+# test_histograms = prep.get_test_video("{:05d}".format(5), GRID_SIZE, BINS)
+# for i in range(10):
+#     found = search.findFrame(test_histograms[i], training_set, cv2.HISTCMP_CHISQR, 10, \
+#                              hist_frame_skip=HIST_FRAME_SKIP, prints= pr, warnings=pr)
+#     print(found)
 
 
 # ## Run model on test set
@@ -107,7 +110,7 @@ for method in [cv2.HISTCMP_CORREL, cv2.HISTCMP_CHISQR, cv2.HISTCMP_INTERSECT,
 #     %timeit -n 10 search.findFrame(test_set[0], training_set, cv2.HISTCMP_CORREL, channels=ch)
 
 
-# In[127]:
+# In[240]:
 
 
 results = []
@@ -120,7 +123,7 @@ for i, histogram in enumerate(test_set):
 
 # ## Evaluate performance
 
-# In[129]:
+# In[241]:
 
 
 movie_results, start_frame_dist = evaluate(results, labels)
@@ -134,4 +137,10 @@ print("\nCorrect video: {:d} / {:d} ({:.1f}%)".format(movie_results[0], movie_re
 print("Inside fragment: {:d} / {:d} ({:.1f}%)".format(movie_results[1], movie_results[0], fractions[1]))
 print("Average distance to start frame: {:.0f} +/- {:.0f} frames (approx. {:.1f} sec)".format(
     start_frame_dist[0], start_frame_dist[1], start_frame_dist[0]/25))
+
+
+# In[ ]:
+
+
+
 
