@@ -42,21 +42,21 @@ def printParams():
 
 # ## Load training set / generate test set
 
-# In[ ]:
+# In[253]:
 
 
 printParams()
 training_set = prep.load_training_set(range(1, NUM_VIDEOS+1), GRID_SIZE, BINS, HIST_FRAME_SKIP, force_refresh=REFRESH)
 
 
-# In[247]:
+# In[254]:
 
 
 # Set of 100 custom fragments with duration 20sec
 test_set, labels = generate_test_segments(training_set, n=100, duration=20)
 
 
-# In[248]:
+# In[255]:
 
 
 # Print statistics
@@ -73,11 +73,11 @@ print("Size: {:d}".format( len(test_set) ))
 
 # # Small manual test
 
-# In[251]:
+# In[264]:
 
 
-pr = True
-for i in range(1):
+pr = False
+for i in range(10):
 #     x = random.choice(range(len(test_set[i])))
     found = search.findFrame(test_set[i][0], training_set, cv2.HISTCMP_CHISQR, 2, prints= pr, warnings=pr)
     print('Found {} - Expected {}'.format(found, labels[i]))
@@ -85,20 +85,19 @@ for i in range(1):
 
 # ## Run model on test set
 
-# In[204]:
+# In[261]:
 
 
 for method in [cv2.HISTCMP_CORREL, cv2.HISTCMP_CHISQR, cv2.cv2.HISTCMP_INTERSECT,
                cv2.HISTCMP_BHATTACHARYYA, cv2.HISTCMP_CHISQR_ALT, cv2.HISTCMP_KL_DIV]:
     get_ipython().run_line_magic('timeit', '-n 10 search.findFrame(test_set[0][0], training_set, method, warnings = False)')
 
-
 # for ch in [[0], [1], [0, 1]]:
 #     print('{}'.format(ch))
 #     %timeit -n 10 search.findFrame(test_set[0], training_set, cv2.HISTCMP_CORREL, channels=ch)
 
 
-# In[220]:
+# In[262]:
 
 
 results = []
@@ -113,7 +112,7 @@ for i, histogram in enumerate(test_set):
 
 # ## Evaluate performance
 
-# In[221]:
+# In[263]:
 
 
 evaluate_segments(results, labels)

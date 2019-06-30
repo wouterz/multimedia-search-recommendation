@@ -9,3 +9,4 @@
 /.doit.db.dir
 *.mp4
 *.tsv
+/**/data/*
