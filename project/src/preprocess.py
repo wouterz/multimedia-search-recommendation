@@ -139,7 +139,7 @@ def create_segment(movie_id: str, video_frames, row: np.ndarray, grid_size : int
 
 
 
-def get_test_video(name: str, grid_size : int, bins: []):
+def get_test_video(name: str, grid_size : int, bins: [], average=False):
     """
     Get a random 20 second sample from video: name. 
     Compute the histograms for this sample with grid_size and bins.
@@ -163,6 +163,10 @@ def get_test_video(name: str, grid_size : int, bins: []):
     i = 0
     frames = source_video.get_frames()
     histograms = []
+    
+    buffer = None
+    buffer_size = 0
+    
     for f in frames:
         if i < start_frame:
             i += 1
@@ -171,12 +175,30 @@ def get_test_video(name: str, grid_size : int, bins: []):
         if i == end_frame:
             break
         
-        histograms.append(compute_histograms(f, grid_size=grid_size, bins=bins))
+        hist = compute_histograms(f, grid_size=grid_size, bins=bins)
+        
+        # Put histograms in buffer and average histograms when buffer full (if average parameter is > 0)
+        if average and average > 0:
+            
+            if buffer is None:
+                buffer = hist
+            else:
+                np.add(buffer, hist)
+                buffer_size += 1
+            
+            if buffer_size >= average:
+                histograms.append(np.divide(buffer, buffer_size))
+                buffer = None
+                buffer_size = 0
+                
+        else:
+            histograms.append(hist)
+            
         i += 1
 
     return histograms, int(start_frame), int(end_frame)
 
-def get_test_video_set(max_vid, grid_size, bins, n=100, duration=20):
+def get_test_video_set(max_vid, grid_size, bins, n=100, duration=20, average=False):
     """
     Get or create test n videos. Try to load from pickle to save time, or compute new ones.
     """
@@ -215,7 +237,7 @@ def get_test_video_set(max_vid, grid_size, bins, n=100, duration=20):
         
         vid = random.choice(range(1, max_vid+1))
         vid_name = "{:05d}".format(vid)
-        hists, start_frame, end_frame = get_test_video(vid_name, grid_size, bins)
+        hists, start_frame, end_frame = get_test_video(vid_name, grid_size, bins, average)
         
         test_set.append(hists)
         labels.append(('{}.mp4'.format(vid_name), start_frame, end_frame))
