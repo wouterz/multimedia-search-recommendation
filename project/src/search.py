@@ -3,6 +3,9 @@ import numpy as np
 import cv2
 
 def isSimilarityMetric(metric):
+    """
+    This function determines if the used metric is a similarity metric, or a dissimilarity metric.
+    """
     if metric == cv2.HISTCMP_CORREL or metric == cv2.HISTCMP_INTERSECT:
         return True
     elif metric == cv2.HISTCMP_CHISQR or metric == cv2.HISTCMP_BHATTACHARYYA or metric == cv2.HISTCMP_CHISQR_ALT or metric == cv2.HISTCMP_KL_DIV:
