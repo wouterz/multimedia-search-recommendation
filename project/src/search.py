@@ -10,7 +10,7 @@ def isSimilarityMetric(metric):
     
     raise 'Unknown hist metric'
         
-def knownImageSearch(segment, training_set, method, best_n, frame_skip):
+def knownImageSearch(segment, training_set, method, best_n, frame_skip, channels = [0,1], depth = 0):
     """
     Perform a known image search, looking for segment in the training set. 
     This function recursively looks for a start and end frame that belong to the
@@ -21,15 +21,17 @@ def knownImageSearch(segment, training_set, method, best_n, frame_skip):
     #avg hotfix
     frame_skip = abs(frame_skip)
     
-    found_start = findFrame(segment[0], training_set, method, best_n,
+    found_start = findFrame(segment[0], training_set, method, best_n, channels = channels,
                              hist_frame_skip=frame_skip, warnings = False)
-    found_end = findFrame(segment[maxFrame], training_set, method, best_n, 
+    found_end = findFrame(segment[maxFrame], training_set, method, best_n, channels = channels, 
                              hist_frame_skip=frame_skip, warnings = False)
     
-    if found_start[0] == found_end[0] and abs(found_start[1] - found_end[1]) < 800:
+    
+    
+    if (found_start[0] == found_end[0] and abs(found_start[1] - found_end[1]) < 800) or depth == 20:
         return (found_start[0], (found_start[1]+found_end[1])/2)
     else:
-        return knownImageSearch(segment[1:maxFrame], training_set, method, best_n, frame_skip)
+        return knownImageSearch(segment[1:maxFrame], training_set, method, best_n, frame_skip, channels, depth + 1)
 
 
 def findFrame(target_histograms, videos, histMetric, best_n_full_hist = 10, channels = [0, 1], hist_frame_skip = 20, prints = False, warnings = True):
@@ -153,7 +155,7 @@ def findFrame(target_histograms, videos, histMetric, best_n_full_hist = 10, chan
     
     match_vid = result[0][0]
     match_seg = best_segment_dist_indices[result[0][0]][result[1][0]]
-    matched_frame_idx = best_segment_dist_indices[result_idx[0][0]][result_idx[0][0]]
+    matched_frame_idx = best_segment_dist_indices[result_idx[0][0]][result_idx[0][1]]
         
     if prints:
         print('video {:05d} - segment {}'.format(match_vid+1, match_seg))
