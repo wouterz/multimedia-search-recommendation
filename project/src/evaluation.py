@@ -138,7 +138,7 @@ def evaluate(predicted, labels):
     movie_correct = 0
     location_correct = 0
     
-    start_frame_dist = []    
+    center_frame_dist = []    
     overlaps = []
     
     for pred, label in zip(predicted, labels):
@@ -148,8 +148,8 @@ def evaluate(predicted, labels):
         if pred[0] == label[0]: # Check if movie is correct
             movie_correct += 1
             
-            dist = abs(pred[1] - label[1])    
-            start_frame_dist.append(dist)
+            dist = abs(pred[1] - ((label[1]+label[2])/2))    
+            center_frame_dist.append(dist)
             
             correct = False
             if label[1] <= pred[1] <= label[2]:
@@ -165,4 +165,4 @@ def evaluate(predicted, labels):
 #         ))
         
     # Return (# movies correct, # correct location, # total movies) and (avg start frame distance, std)
-    return (movie_correct, location_correct, total), (np.mean(start_frame_dist), np.std(start_frame_dist))
+    return (movie_correct, location_correct, total), (np.mean(center_frame_dist), np.std(center_frame_dist))
