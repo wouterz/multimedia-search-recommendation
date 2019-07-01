@@ -105,39 +105,36 @@ def create_segment(movie_id: str, video_frames, row: np.ndarray, grid_size : int
     s.histograms = []
         
     # Generate histograms for frames in segment
-    i  = 0
-    for frame in video_frames:
-        # Pick this frame
+    
+    
+    # Generate histograms for frames in segment
+    for i in range(0, s.num_frames()):
         if skip_val > 0 and i % skip_val == 0:
-            frame_histograms = compute_histograms(frame, grid_size=grid_size, bins=bins)
+            frame_histograms = compute_histograms(next(video_frames), grid_size=grid_size, bins=bins)
             s.histograms.append(frame_histograms)
-        # Averaging frames
-        elif skip_val < 0:
+        elif skip_val > 0:
+            next(video_frames)
+        elif skip_val < 0 and i % abs(skip_val) == 0:
             # make pos again
             avg_val = abs(skip_val)
         
             # Sometimes error here as it seems next(video_frames) is already end of list, why....
-            avg_hist = compute_histograms(frame, grid_size=grid_size, bins=bins)
-            print(avg_hist.shape)
+            avg_hist = compute_histograms(next(video_frames), grid_size=grid_size, bins=bins)
             hist_count = 1
-            
+
             # Try to sum the next hists, however might run into end of segment
             try:
-                for i in range(1, avg_val):
+                for _ in range(1, avg_val-1):
                     tmp_hist = compute_histograms(next(video_frames), grid_size=grid_size, bins=bins)
                     np.add(avg_hist, tmp_hist)
                     hist_count += 1
-                    i += 1
             except StopIteration:
                 pass
-            
+
             # Average hists
             avg_hist = np.divide(avg_hist, hist_count)
-            
             s.histograms.append(avg_hist)
-
-        i += 1
-            
+        
     return s
 
 
@@ -177,7 +174,7 @@ def get_test_video(name: str, grid_size : int, bins: []):
         histograms.append(compute_histograms(f, grid_size=grid_size, bins=bins))
         i += 1
 
-    return histograms, start_frame, end_frame
+    return histograms, int(start_frame), int(end_frame)
 
 def get_test_video_set(max_vid, grid_size, bins, n=100, duration=20):
     """
@@ -208,7 +205,7 @@ def get_test_video_set(max_vid, grid_size, bins, n=100, duration=20):
             with open(pickle_file, 'rb') as f:
                 test_set.append(pickle.load(f))
                   
-            labels.append(('{}.mp4'.format(file_split[0]), file_split[1], file_split[2]))
+            labels.append(('{}.mp4'.format(file_split[0]), int(file_split[1]), int(file_split[2])))
      
     
     # create remaining ones      
