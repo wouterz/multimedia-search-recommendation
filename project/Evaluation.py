@@ -26,14 +26,14 @@ import cv2
 
 # ## Parameters
 
-# In[284]:
+# In[356]:
 
 
 NUM_VIDEOS = 2
 GRID_SIZE = 2
-BINS = [int(180/12), int(256/12)]
+BINS = [int(180/4), int(256/4)]
 # negative value is average
-HIST_FRAME_SKIP = -5
+HIST_FRAME_SKIP = 1
 REFRESH = True
 
 # vergeet gebruikte params soms dus print ze maar afentoe
@@ -43,21 +43,22 @@ def printParams():
 
 # ## Load training set / generate test set
 
-# In[ ]:
+# In[357]:
 
 
 printParams()
-training_set = prep.load_training_set(range(1, NUM_VIDEOS+1), GRID_SIZE, BINS, HIST_FRAME_SKIP, force_refresh=REFRESH)
+training_set = prep.load_training_set(range(1, NUM_VIDEOS+1), GRID_SIZE,
+                                      BINS, HIST_FRAME_SKIP, force_refresh=REFRESH)
 
 
-# In[286]:
+# In[354]:
 
 
 # Set of 100 custom fragments with duration 20sec
 test_set, labels = prep.get_test_video_set(NUM_VIDEOS, GRID_SIZE, BINS, n=10)
 
 
-# In[287]:
+# In[358]:
 
 
 # Print statistics
@@ -74,7 +75,7 @@ print("Size: {:d}".format( len(test_set) ))
 
 # # Small manual test
 
-# In[288]:
+# In[345]:
 
 
 for i, test_segment in enumerate(test_set):
@@ -123,11 +124,23 @@ print("Average distance to center of segment: {:.0f} +/- {:.0f} frames (approx. 
     start_frame_dist[0], start_frame_dist[1], start_frame_dist[0]/30))
 
 
-# In[250]:
+# In[352]:
 
 
-for i in range(1,5):
+def gen():
+    for i in range(1,20):
+        yield(i)
+        
+g = gen()
+
+for i in g:
     print(i)
+    for _ in range(2):
+        try:
+            print('inner', next(g))
+        except StopIteration:
+            pass
+    
 
 
 # In[ ]:

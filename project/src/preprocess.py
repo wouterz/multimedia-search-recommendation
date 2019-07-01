@@ -103,43 +103,41 @@ def create_segment(movie_id: str, video_frames, row: np.ndarray, grid_size : int
     s = Segment(movie_id, row[1], row[3], row[0], row[2])
     
     s.histograms = []
-    
-    step_size = 1 if skip_val < 0 else skip_val
-    
+        
     # Generate histograms for frames in segment
-    for i in range(0, s.num_frames()-1, step_size):
+    i  = 0
+    for frame in video_frames:
         # Pick this frame
         if skip_val > 0 and i % skip_val == 0:
-            frame_histograms = compute_histograms(next(video_frames), grid_size=grid_size, bins=bins)
+            frame_histograms = compute_histograms(frame, grid_size=grid_size, bins=bins)
             s.histograms.append(frame_histograms)
-        # Skip this frame if skip val doesnt match
-        elif skip_val > 0:
-            next(video_frames)
         # Averaging frames
         elif skip_val < 0:
-            
-#             try:
             # make pos again
             avg_val = abs(skip_val)
         
             # Sometimes error here as it seems next(video_frames) is already end of list, why....
-            avg_hist = compute_histograms(next(video_frames), grid_size=grid_size, bins=bins)
+            avg_hist = compute_histograms(frame, grid_size=grid_size, bins=bins)
+            print(avg_hist.shape)
             hist_count = 1
             
-            # Try to add the next hists, however might run into end of segment
+            # Try to sum the next hists, however might run into end of segment
             try:
                 for i in range(1, avg_val):
                     tmp_hist = compute_histograms(next(video_frames), grid_size=grid_size, bins=bins)
                     np.add(avg_hist, tmp_hist)
                     hist_count += 1
+                    i += 1
             except StopIteration:
                 pass
             
+            # Average hists
             avg_hist = np.divide(avg_hist, hist_count)
+            
             s.histograms.append(avg_hist)
-#             except StopIteration:
-#                 pass
-                
+
+        i += 1
+            
     return s
 
 
