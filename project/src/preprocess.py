@@ -46,15 +46,16 @@ def process_video(i: int, grid_size : int, bins: [], skip_val, force_refresh=Fal
     
     name = "{:05d}".format(i)
     
-    pickle_dir = os.path.join(PICKLE_PATH, str(grid_size), '_'.join(str(b) for b in bins), str(skip_val))
+    pickle_dir = os.path.join(PICKLE_PATH, str(int(grid_size)), '_'.join(str(int(b)) for b in bins), str(skip_val))
     
-#     Create folder if it doenst exist
+    # Create folder if it doenst exist
     if not os.path.exists(pickle_dir):
         os.makedirs(pickle_dir)
+        force_refresh= True
         
     pickle_path = os.path.join(pickle_dir, name + ".pickle")
 
-#     # If processed pickle exists, load that
+    # If processed pickle exists, load that
     if not force_refresh and os.path.isfile(pickle_path):
 
         # Load pickle
@@ -146,7 +147,7 @@ def get_test_video(name: str, grid_size : int, bins: []):
         histograms.append(compute_histograms(f, grid_size=grid_size, bins=bins))
         i += 1
 
-    return histograms, start_frame
+    return histograms, start_frame, end_frame
 
 def get_test_video_set(max_vid, grid_size, bins, n=100, duration=20):
     test_set = []
@@ -157,9 +158,9 @@ def get_test_video_set(max_vid, grid_size, bins, n=100, duration=20):
 
         vid = random.choice(range(1, max_vid))
         vid_name = "{:05d}".format(vid)
-        hists, start_frame = get_test_video(vid_name, grid_size, bins)
+        hists, start_frame, end_frame = get_test_video(vid_name, grid_size, bins)
         test_set.append(hists)
-        labels.append(('{}.mp4'.format(vid_name), start_frame, 666))
+        labels.append(('{}.mp4'.format(vid_name), start_frame, end_frame))
     
 
     return test_set, labels

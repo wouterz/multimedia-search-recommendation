@@ -140,5 +140,11 @@ def findFrame(target_histograms, videos, histMetric, best_n_full_hist = 10, chan
         print('video {:05d} - segment {}'.format(match_vid+1, match_seg))
 
     seg = videos[match_vid].segments[match_seg]
-    matched_frame_start = seg.frame_start + int(matched_frame * hist_frame_skip)
+    
+#     display(seg.frame_start)
+#     display(seg.frame_end)
+#     display(matched_frame)
+    
+#     matched_frame_start = seg.frame_start + int(matched_frame * hist_frame_skip)
+    matched_frame_start = seg.frame_end
     return ('{:05d}.mp4'.format(match_vid+1), matched_frame_start)
