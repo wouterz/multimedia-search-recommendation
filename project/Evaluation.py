@@ -3,14 +3,14 @@
 
 # # Evaluation
 
-# In[1]:
+# In[8]:
 
 
 get_ipython().run_line_magic('load_ext', 'autoreload')
 get_ipython().run_line_magic('autoreload', '2')
 
 
-# In[2]:
+# In[9]:
 
 
 import pandas as pd
@@ -26,14 +26,15 @@ import cv2
 
 # ## Parameters
 
-# In[233]:
+# In[284]:
 
 
-NUM_VIDEOS = 5
+NUM_VIDEOS = 2
 GRID_SIZE = 2
-BINS = [180/1, int(256/1)]
-HIST_FRAME_SKIP = 1
-REFRESH = False
+BINS = [int(180/12), int(256/12)]
+# negative value is average
+HIST_FRAME_SKIP = -5
+REFRESH = True
 
 # vergeet gebruikte params soms dus print ze maar afentoe
 def printParams():
@@ -42,23 +43,21 @@ def printParams():
 
 # ## Load training set / generate test set
 
-# In[234]:
+# In[ ]:
 
 
 printParams()
 training_set = prep.load_training_set(range(1, NUM_VIDEOS+1), GRID_SIZE, BINS, HIST_FRAME_SKIP, force_refresh=REFRESH)
 
 
-# In[235]:
+# In[286]:
 
 
 # Set of 100 custom fragments with duration 20sec
-test_set, labels = prep.get_test_video_set(NUM_VIDEOS, GRID_SIZE, BINS, n=5)
-
-# test_set, labels = generate_test_segments(training_set, n=100, duration=20)
+test_set, labels = prep.get_test_video_set(NUM_VIDEOS, GRID_SIZE, BINS, n=10)
 
 
-# In[236]:
+# In[287]:
 
 
 # Print statistics
@@ -75,55 +74,40 @@ print("Size: {:d}".format( len(test_set) ))
 
 # # Small manual test
 
-# In[237]:
+# In[288]:
 
 
-pr = False
-for i in range(0,1):
-    for j in range(5):
-        x = random.choice(range(len(test_set[i])))
-        found = search.findFrame(test_set[i][x], training_set, cv2.HISTCMP_CHISQR, 5, hist_frame_skip=HIST_FRAME_SKIP, prints= pr, warnings=pr)
-        print('Found {} - Expected {}'.format(found, labels[i]))
-
-        
-# test_histograms = prep.get_test_video("{:05d}".format(5), GRID_SIZE, BINS)
-# for i in range(10):
-#     found = search.findFrame(test_histograms[i], training_set, cv2.HISTCMP_CHISQR, 10, \
-#                              hist_frame_skip=HIST_FRAME_SKIP, prints= pr, warnings=pr)
-#     print(found)
+for i, test_segment in enumerate(test_set):
+    found = search.knownImageSearch(test_segment, training_set, cv2.HISTCMP_CHISQR_ALT, 5, HIST_FRAME_SKIP)
+    
+    print('Found {} - Expected {}'.format(found, labels[i]))
 
 
 # ## Run model on test set
 
-# In[9]:
+# In[172]:
 
 
 for method in [cv2.HISTCMP_CORREL, cv2.HISTCMP_CHISQR, cv2.HISTCMP_INTERSECT,
                cv2.HISTCMP_BHATTACHARYYA, cv2.HISTCMP_CHISQR_ALT, cv2.HISTCMP_KL_DIV]:
-# for method in [cv2.HISTCMP_BHATTACHARYYA]:
-    get_ipython().run_line_magic('timeit', '-n 1 search.findFrame_old(test_set[0][0], training_set, method, warnings = False)')
-    get_ipython().run_line_magic('timeit', '-n 1 search.findFrame(test_set[0][0], training_set, method, warnings = False)')
-    print()
-
-# for ch in [[0], [1], [0, 1]]:
-#     print('{}'.format(ch))
-#     %timeit -n 10 search.findFrame(test_set[0], training_set, cv2.HISTCMP_CORREL, channels=ch)
+    get_ipython().run_line_magic('timeit', '-n 1 search.knownImageSearch(test_set[0], training_set, cv2.HISTCMP_CHISQR_ALT, 5, HIST_FRAME_SKIP)')
 
 
-# In[240]:
+# In[174]:
 
 
 results = []
 
-for i, histogram in enumerate(test_set):
-    print("\rSearching segment {}/{}".format(i+1, len(test_set), len(histogram)), end='', flush=True)
+for i, test_segment in enumerate(test_set):
+    print("\rSearching segment {}/{}".format(i+1, len(test_set), len(test_segment)), end='', flush=True)
     
-    results.append(search.findFrame(histogram[0], training_set, cv2.HISTCMP_CHISQR_ALT, 2,                                     hist_frame_skip=HIST_FRAME_SKIP, warnings = False))
+    results.append(search.knownImageSearch(test_segment, training_set, cv2.HISTCMP_CHISQR_ALT, 5, 
+                                    HIST_FRAME_SKIP))
 
 
 # ## Evaluate performance
 
-# In[241]:
+# In[185]:
 
 
 movie_results, start_frame_dist = evaluate(results, labels)
@@ -135,8 +119,15 @@ print("TEST RESULTS\n")
 printParams()
 print("\nCorrect video: {:d} / {:d} ({:.1f}%)".format(movie_results[0], movie_results[2], fractions[0]))
 print("Inside fragment: {:d} / {:d} ({:.1f}%)".format(movie_results[1], movie_results[0], fractions[1]))
-print("Average distance to start frame: {:.0f} +/- {:.0f} frames (approx. {:.1f} sec)".format(
-    start_frame_dist[0], start_frame_dist[1], start_frame_dist[0]/25))
+print("Average distance to center of segment: {:.0f} +/- {:.0f} frames (approx. {:.1f} sec)".format(
+    start_frame_dist[0], start_frame_dist[1], start_frame_dist[0]/30))
+
+
+# In[250]:
+
+
+for i in range(1,5):
+    print(i)
 
 
 # In[ ]:
